@@ -1,0 +1,1226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PaperPort Pro Analyzer v5.0 — Xerox Red</title>
+<style>
+/* ===== RESET & XEROX RED THEME ===== */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  /* XEROX RED PALETTE */
+  --xr:#DA291C;          /* Xerox primary red */
+  --xr-dark:#A61F14;     /* dark red */
+  --xr-light:#E63946;    /* lighter red */
+  --xr-pale:#FDEAEA;     /* pale red */
+  --xr-border:#F5C6C6;   /* border red */
+  --xr-glow:rgba(218,41,28,.14);
+  /* Neutrals */
+  --bg:#FAFAFA;--bg2:#FFFFFF;--bg3:#FBF3F3;
+  --txt:#1A1A2E;--txt2:#4A4A5A;--txt3:#8A8A9A;
+  --border:#EFE0E0;--green:#1E8A54;--warn:#D97706;--blue:#1E6FBA;--purple:#7C3AED;
+  --sh1:0 1px 3px rgba(166,31,20,.06);
+  --sh2:0 4px 14px rgba(166,31,20,.10);
+  --sh3:0 10px 34px rgba(166,31,20,.14);
+  --r:10px;--rs:6px;--tr:0.22s cubic-bezier(.4,0,.2,1);
+}
+body{
+  font-family:"Inter","Segoe UI",system-ui,sans-serif;background:var(--bg);color:var(--txt);
+  overflow-x:hidden;line-height:1.6;
+}
+/* HEADER */
+header{
+  background:linear-gradient(135deg,#fff 0%,#FFF5F5 60%,#FDEAEA 100%);
+  border-bottom:2px solid var(--xr);padding:14px 28px;
+  display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:10px;box-shadow:var(--sh1);position:sticky;top:0;z-index:100;
+}
+header .logo{display:flex;align-items:center;gap:10px;font-size:19px;font-weight:800;color:var(--xr);letter-spacing:-.2px;}
+header .logo .icn{width:38px;height:38px;background:linear-gradient(135deg,var(--xr) 0%,var(--xr-dark) 100%);border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;box-shadow:0 4px 10px var(--xr-glow);}
+header .badge{font-size:11px;background:var(--xr-pale);color:var(--xr-dark);padding:4px 12px;border-radius:20px;font-weight:700;border:1px solid var(--xr-border);}
+header .badge.alt{background:#fff;color:var(--xr);border-color:var(--xr);}
+/* TABS */
+.tab-bar{display:flex;gap:2px;padding:10px 28px 0;background:var(--bg);flex-wrap:wrap;}
+.tab-btn{
+  padding:10px 20px;border:none;background:var(--bg3);font-size:12px;font-weight:700;
+  cursor:pointer;color:var(--txt2);border-radius:var(--r) var(--r) 0 0;
+  transition:var(--tr);border:1px solid transparent;border-bottom:none;letter-spacing:.3px;
+}
+.tab-btn.active{background:var(--bg2);color:var(--xr);border-color:var(--border);box-shadow:0 -2px 8px var(--xr-glow);}
+.tab-btn:hover:not(.active){color:var(--xr);background:var(--xr-pale);}
+.tab-content{display:none;}
+.tab-content.active{display:block;}
+/* STATS */
+.stats-bar{display:flex;gap:14px;padding:14px 28px;flex-wrap:wrap;}
+.stat-card{
+  flex:1;min-width:130px;background:var(--bg2);border:1px solid var(--border);
+  border-radius:var(--r);padding:12px 16px;box-shadow:var(--sh1);
+  display:flex;align-items:center;gap:10px;transition:var(--tr);
+}
+.stat-card:hover{box-shadow:var(--sh2);transform:translateY(-1px);border-color:var(--xr-border);}
+.stat-card .si{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;}
+.stat-card .si.r{background:var(--xr-pale);color:var(--xr);}
+.stat-card .si.b{background:#E8F1FB;color:var(--blue);}
+.stat-card .si.g{background:#E6F6EE;color:var(--green);}
+.stat-card .si.a{background:#FEF3E2;color:var(--warn);}
+.sv{font-size:22px;font-weight:800;letter-spacing:-.3px;}
+.sl{font-size:11px;color:var(--txt3);text-transform:uppercase;letter-spacing:.5px;font-weight:600;}
+/* LAYOUT */
+.container{display:grid;grid-template-columns:460px 1fr;gap:18px;padding:0 28px 28px;min-height:calc(100vh - 180px);}
+@media(max-width:1100px){.container{grid-template-columns:1fr;}}
+.left{display:flex;flex-direction:column;gap:14px;}
+.panel{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--sh1);overflow:hidden;}
+.panel-hd{padding:10px 16px;font-weight:800;font-size:12px;text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:7px;color:var(--xr);}
+.panel-bd{padding:12px 16px;}
+.dropzone{border:2px dashed var(--xr-border);border-radius:var(--r);padding:20px;text-align:center;cursor:pointer;transition:var(--tr);background:var(--bg3);color:var(--txt2);}
+.dropzone:hover,.dropzone.dragover{border-color:var(--xr);background:var(--xr-pale);}
+.dropzone .dz-icn{font-size:28px;margin-bottom:4px;}
+textarea{
+  width:100%;min-height:90px;background:var(--bg3);color:var(--txt);padding:10px;
+  border:1px solid var(--border);border-radius:var(--rs);font-family:"JetBrains Mono","Fira Code",monospace;
+  font-size:11px;resize:vertical;transition:var(--tr);
+}
+textarea:focus{outline:none;border-color:var(--xr);box-shadow:0 0 0 3px var(--xr-pale);}
+.filter-row{display:flex;gap:6px;flex-wrap:wrap;}
+.filter-chip{padding:5px 12px;border-radius:18px;font-size:10px;font-weight:700;cursor:pointer;border:1px solid var(--border);background:#fff;color:var(--txt2);transition:var(--tr);user-select:none;}
+.filter-chip.active{background:var(--xr);color:#fff;border-color:var(--xr);}
+.filter-chip:hover:not(.active){border-color:var(--xr);background:var(--xr-pale);}
+input[type="text"]{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--rs);font-size:12px;background:#fff;transition:var(--tr);}
+input[type="text"]:focus{outline:none;border-color:var(--xr);box-shadow:0 0 0 3px var(--xr-pale);}
+.btn{padding:9px 18px;border:none;border-radius:var(--rs);font-weight:700;font-size:12px;cursor:pointer;transition:var(--tr);letter-spacing:.3px;}
+.btn-pri{background:var(--xr);color:#fff;box-shadow:0 2px 8px var(--xr-glow);}
+.btn-pri:hover{background:var(--xr-dark);box-shadow:var(--sh2);}
+.btn-sec{background:#fff;color:var(--xr);border:1px solid var(--xr-border);}
+.btn-sec:hover{background:var(--xr-pale);}
+.decode-panel{background:var(--bg3);border-radius:var(--rs);padding:12px;max-height:250px;overflow-y:auto;font-family:"JetBrains Mono","Fira Code",monospace;font-size:10px;line-height:1.7;white-space:pre-wrap;word-break:break-all;border:1px solid var(--border);}
+.hex-link{color:var(--xr);cursor:pointer;font-weight:700;text-decoration:underline;text-underline-offset:2px;transition:var(--tr);}
+.hex-link:hover{color:var(--xr-dark);}
+/* RIGHT */
+.right{display:flex;flex-direction:column;gap:14px;}
+.section{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--sh1);overflow:hidden;animation:fadeSlide .35s ease;}
+@keyframes fadeSlide{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.section-hd{padding:10px 16px;font-weight:800;font-size:12px;text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:linear-gradient(180deg,#fff,#FFF5F5);}
+.section-hd .cnt{font-size:10px;color:var(--txt3);font-weight:600;}
+.section-bd{padding:12px 16px;max-height:450px;overflow-y:auto;}
+.data-table{width:100%;border-collapse:collapse;font-size:11px;}
+.data-table th{text-align:left;padding:7px 9px;font-weight:800;font-size:9px;text-transform:uppercase;letter-spacing:.4px;color:var(--txt3);border-bottom:2px solid var(--border);position:sticky;top:0;background:#fff;z-index:1;}
+.data-table td{padding:6px 9px;border-bottom:1px solid #F7EDED;vertical-align:top;}
+.data-table tr:hover td{background:var(--bg3);}
+.data-table .mono{font-family:"JetBrains Mono","Fira Code",monospace;font-size:10px;}
+.bg{background:#E6F6EE;color:var(--green);padding:2px 7px;border-radius:9px;font-size:9px;font-weight:700;}
+.bw{background:#FEF3E2;color:var(--warn);padding:2px 7px;border-radius:9px;font-size:9px;font-weight:700;}
+.bb{background:var(--xr-pale);color:var(--xr);padding:2px 7px;border-radius:9px;font-size:9px;font-weight:700;}
+.bi{background:#E8F1FB;color:var(--blue);padding:2px 7px;border-radius:9px;font-size:9px;font-weight:700;}
+.alert{background:var(--xr-pale);border:1px solid var(--xr-border);border-radius:var(--rs);padding:10px 14px;margin:6px 0;font-size:11px;color:var(--xr-dark);display:flex;align-items:center;gap:7px;font-weight:600;}
+.timeline-container{width:100%;overflow-x:auto;background:var(--bg3);border-radius:var(--rs);}
+.timeline-container svg{display:block;}
+.conv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;}
+.conv-card{background:var(--bg3);border-radius:var(--rs);padding:14px;border:1px solid var(--border);}
+.conv-card h4{font-size:12px;color:var(--xr);margin-bottom:8px;text-transform:uppercase;letter-spacing:.4px;font-weight:800;}
+.conv-row{display:flex;gap:8px;align-items:center;margin:6px 0;}
+.conv-row label{font-size:10px;color:var(--txt3);width:80px;flex-shrink:0;text-align:right;font-weight:600;}
+.conv-row input{flex:1;padding:6px 10px;border:1px solid var(--border);border-radius:4px;font-size:11px;font-family:"JetBrains Mono",monospace;}
+.conv-row .result{font-weight:800;color:var(--xr);font-family:"JetBrains Mono",monospace;font-size:11px;}
+.kv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:6px;}
+.kv-item{background:var(--bg3);padding:7px 10px;border-radius:var(--rs);font-size:11px;border:1px solid var(--border);}
+.kv-item .k{font-size:9px;color:var(--txt3);text-transform:uppercase;letter-spacing:.3px;font-weight:600;}
+.kv-item .v{font-weight:700;color:var(--txt);margin-top:1px;}
+.opcode-table{width:100%;border-collapse:collapse;font-size:11px;}
+.opcode-table th{text-align:left;padding:6px 8px;font-weight:800;font-size:9px;text-transform:uppercase;color:var(--txt3);border-bottom:2px solid var(--border);background:#fff;}
+.opcode-table td{padding:5px 8px;border-bottom:1px solid #F7EDED;vertical-align:top;}
+.opcode-table tr:hover td{background:var(--bg3);}
+.opcode-table .cmd{font-weight:800;color:var(--xr);font-family:"JetBrains Mono",monospace;}
+.job-card{background:var(--bg3);border-radius:var(--rs);padding:12px;margin:6px 0;border-left:3px solid var(--xr);cursor:pointer;transition:var(--tr);}
+.job-card:hover{background:var(--xr-pale);box-shadow:var(--sh2);transform:translateX(2px);}
+.job-card .job-id{font-weight:800;color:var(--xr);font-size:13px;}
+.job-card .job-meta{font-size:10px;color:var(--txt3);margin-top:4px;}
+.job-card .job-flow{font-size:9px;color:var(--txt2);margin-top:6px;line-height:1.6;max-height:60px;overflow:hidden;}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(30,10,10,.45);z-index:200;align-items:center;justify-content:center;backdrop-filter:blur(2px);}
+.modal-overlay.show{display:flex;}
+.modal{background:#fff;border-radius:var(--r);box-shadow:var(--sh3);max-width:820px;width:92%;max-height:85vh;overflow-y:auto;padding:0;border-top:4px solid var(--xr);}
+.modal-header{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;font-weight:800;color:var(--xr);position:sticky;top:0;background:#fff;z-index:1;}
+.modal-close{background:none;border:none;font-size:22px;cursor:pointer;color:var(--txt3);padding:4px 8px;border-radius:4px;}
+.modal-close:hover{background:var(--bg3);color:var(--xr);}
+.modal-body{padding:16px 20px;font-size:12px;line-height:1.8;}
+.modal-body .flow-step{display:flex;gap:10px;padding:6px 0;border-bottom:1px solid #FBF3F3;align-items:flex-start;}
+.modal-body .flow-step .step-dot{width:8px;height:8px;border-radius:50%;margin-top:5px;flex-shrink:0;}
+.modal-body .flow-step .step-info{flex:1;font-size:10px;}
+.bar-row{display:flex;align-items:center;gap:8px;margin:5px 0;}
+.bar-label{width:100px;font-size:10px;text-align:right;color:var(--txt2);flex-shrink:0;font-weight:600;}
+.bar-track{flex:1;height:18px;background:var(--bg3);border-radius:9px;overflow:hidden;border:1px solid var(--border);}
+.bar-fill{height:100%;border-radius:9px;transition:width .6s ease;display:flex;align-items:center;justify-content:flex-end;padding-right:7px;font-size:9px;font-weight:800;color:#fff;min-width:24px;}
+.empty-state{text-align:center;padding:36px 20px;color:var(--txt3);}
+.empty-state .ei{font-size:44px;margin-bottom:10px;opacity:.5;}
+::-webkit-scrollbar{width:6px;height:6px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--xr-border);border-radius:3px;}
+::-webkit-scrollbar-thumb:hover{background:var(--xr);}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo"><div class="icn">📄</div><span>PaperPort Pro Analyzer</span></div>
+  <div style="display:flex;gap:7px;align-items:center;">
+    <span class="badge">Lexmark FCR · PaperPort III</span>
+    <span class="badge alt">v5.0 — Xerox Red</span>
+  </div>
+</header>
+
+<div class="tab-bar">
+  <button class="tab-btn active" onclick="switchTab('analyzer')">🔬 Analyzer</button>
+  <button class="tab-btn" onclick="switchTab('timeline')">📈 Timeline</button>
+  <button class="tab-btn" onclick="switchTab('sequence')">🔀 Sequence</button>
+  <button class="tab-btn" onclick="switchTab('conversion')">🔧 Conversion</button>
+  <button class="tab-btn" onclick="switchTab('opcodes')">📋 Opcode Ref</button>
+</div>
+
+<div class="stats-bar" id="statsBar">
+  <div class="stat-card"><div class="si r">📃</div><div><div class="sv" id="statPages">0</div><div class="sl">Pages Picked</div></div></div>
+  <div class="stat-card"><div class="si b">📏</div><div><div class="sv" id="statGaps">0</div><div class="sl">QDMG Gaps</div></div></div>
+  <div class="stat-card"><div class="si g">🔄</div><div><div class="sv" id="statSLPQ">0</div><div class="sl">SLPQ Routes</div></div></div>
+  <div class="stat-card"><div class="si a">⚡</div><div><div class="sv" id="statAlarms">0</div><div class="sl">Alarms</div></div></div>
+  <div class="stat-card"><div class="si r">⏱️</div><div><div class="sv" id="statAvgDelta">—</div><div class="sl">Avg Δ Pick</div></div></div>
+  <div class="stat-card"><div class="si b">🆔</div><div><div class="sv" id="statJobs">0</div><div class="sl">Jobs Found</div></div></div>
+</div>
+
+<!-- TAB 1: ANALYZER -->
+<div class="tab-content active" id="tab-analyzer">
+<div class="container">
+<div class="left">
+  <div class="panel"><div class="panel-hd">📂 Log Input</div>
+    <div class="panel-bd">
+      <div id="dropzone" class="dropzone"><div class="dz-icn">📁</div><div style="font-weight:700;">Drag &amp; Drop Log</div><div style="font-size:10px;color:var(--txt3);">or paste below</div></div>
+      <textarea id="logInput" placeholder="Paste Lexmark FCR engine log..." style="margin-top:8px;"></textarea>
+    </div>
+  </div>
+  <div class="panel"><div class="panel-hd">🔍 Filters</div>
+    <div class="panel-bd">
+      <div class="filter-row" id="filterChips">
+        <span class="filter-chip active" data-f="PickPage">PickPage</span>
+        <span class="filter-chip active" data-f="SLPQ">SLPQ</span>
+        <span class="filter-chip active" data-f="QDMG">QDMG</span>
+        <span class="filter-chip active" data-f="SPS">SPS</span>
+        <span class="filter-chip" data-f="PAPER_PATH">PAPER_PATH</span>
+        <span class="filter-chip" data-f="ALARM">ALARM</span>
+        <span class="filter-chip" data-f="TRANSFER_SERVO">TRANSFER</span>
+        <span class="filter-chip" data-f="TPS">TPS</span>
+        <span class="filter-chip" data-f="SIDE_INFO">SIDE_INFO</span>
+        <span class="filter-chip" data-f="LSU">LSU</span>
+        <span class="filter-chip" data-f="BLDC">BLDC</span>
+        <span class="filter-chip" data-f="PTC">PTC</span>
+        <span class="filter-chip" data-f="QDQ">QDQ</span>
+        <span class="filter-chip" data-f="QDT">QDT</span>
+        <span class="filter-chip" data-f="QDI">QDI</span>
+        <span class="filter-chip" data-f="QDM">QDM</span>
+        <span class="filter-chip" data-f="JAM">JAM</span>
+      </div>
+      <input type="text" id="customRegex" placeholder="Custom regex..." style="margin-top:6px;">
+    </div>
+  </div>
+  <div class="panel"><div class="panel-bd" style="display:flex;gap:7px;">
+    <button class="btn btn-pri" onclick="analyze()" style="flex:1;">🔬 Analyze</button>
+    <button class="btn btn-sec" onclick="clearAll()">✕ Clear</button>
+  </div></div>
+  <div class="panel" style="flex:1;display:flex;flex-direction:column;min-height:0;">
+    <div class="panel-hd">🔎 HEX Deep Decode</div>
+    <div class="panel-bd" style="flex:1;overflow:hidden;padding:0;">
+      <div id="decodePanel" class="decode-panel" style="max-height:none;height:100%;">
+        Click any <span style="color:var(--xr);font-weight:700;">0x...</span> hex value to decode.
+      </div>
+    </div>
+  </div>
+</div>
+<div class="right" id="output">
+  <div class="empty-state"><div class="ei">📊</div><div style="font-size:15px;font-weight:700;">No Analysis Yet</div><div style="font-size:12px;">Load a log and click <strong>Analyze</strong>.</div></div>
+</div>
+</div>
+</div>
+
+<!-- TAB 2: TIMELINE -->
+<div class="tab-content" id="tab-timeline">
+  <div style="padding:0 28px 28px;">
+    <div class="panel"><div class="panel-hd">📈 Interactive Timeline — PickPage · Sensors · Alarms · Motors · Speed · Gaps</div>
+    <div class="panel-bd" style="padding:0;">
+      <div class="timeline-container" id="timelineChart" style="min-height:300px;">
+        <div class="empty-state"><div class="ei">📈</div><div>Run the Analyzer first to populate the timeline.</div></div>
+      </div>
+    </div></div>
+    <div class="panel" style="margin-top:14px;"><div class="panel-hd">📋 Timeline Legend &amp; Job Summary</div>
+    <div class="panel-bd" id="timelineSummary">
+      <div style="font-size:11px;color:var(--txt3);">Timeline details will appear after analysis.</div>
+    </div></div>
+  </div>
+</div>
+
+<!-- TAB 3: SEQUENCE -->
+<div class="tab-content" id="tab-sequence">
+  <div style="padding:0 28px 28px;">
+    <div class="panel"><div class="panel-hd">🔀 Command / Response Sequence — PaperPort Protocol</div>
+    <div class="panel-bd" id="sequenceView" style="padding:14px;">
+      <div style="font-size:11px;color:var(--txt3);">Run the Analyzer first, then select a device address to view its command/response sequence.</div>
+    </div></div>
+    <div class="panel" style="margin-top:14px;"><div class="panel-hd">🗺️ Detected Device Addresses &amp; Trunk Lines</div>
+    <div class="panel-bd" id="deviceList">
+      <div style="font-size:11px;color:var(--txt3);">No devices detected.</div>
+    </div></div>
+  </div>
+</div>
+
+<!-- TAB 4: CONVERSION -->
+<div class="tab-content" id="tab-conversion">
+  <div style="padding:0 28px 28px;">
+    <div class="conv-grid">
+      <div class="conv-card"><h4>⚡ PTC → Linear Speed &amp; PPM</h4>
+        <div class="conv-row"><label>PTC (hex)</label><input id="convPTC" placeholder="79C" oninput="convPTCtoSpeed()"><span class="result" id="convPTCResult"></span></div>
+        <div style="font-size:9px;color:var(--txt3);margin-top:4px;">Ref: 79C=121.75mm/s · ABE=171.88mm/s · 9C5=156.3mm/s · LSB=1/16 mm/s</div>
+      </div>
+      <div class="conv-card"><h4>⚡ SPS → Linear Speed</h4>
+        <div class="conv-row"><label>SPS (hex)</label><input id="convSPS" placeholder="137E" oninput="convSPStoSpeed()"><span class="result" id="convSPSResult"></span></div>
+        <div style="font-size:9px;color:var(--txt3);margin-top:4px;">SPS N2:N3 u16 · Linear = Raw/16 mm/s · N1=FE/FF selects output/input</div>
+      </div>
+      <div class="conv-card"><h4>📏 QDMG Gap Decoder</h4>
+        <div class="conv-row"><label>QDMG (hex)</label><input id="convQDMG" placeholder="0x1200" oninput="convQDMGtoDist()"><span class="result" id="convQDMGResult"></span></div>
+        <div style="font-size:9px;color:var(--txt3);margin-top:4px;">Gap = (N1&lt;&lt;8)|N2 in 1mm units · 0xFFFF = Device Not Ready</div>
+      </div>
+      <div class="conv-card"><h4>🔢 Hex ↔ Decimal</h4>
+        <div class="conv-row"><label>Hex</label><input id="convHex" placeholder="0x79C" oninput="convHexDec()"><span class="result" id="convHexResult"></span></div>
+        <div class="conv-row"><label>Decimal</label><input id="convDec" placeholder="1948" oninput="convDecHex()"><span class="result" id="convDecResult"></span></div>
+      </div>
+      <div class="conv-card"><h4>📐 Time ↔ Distance</h4>
+        <div class="conv-row"><label>Speed mm/s</label><input id="convSpeed" placeholder="121.75" oninput="convTimeDist()"></div>
+        <div class="conv-row"><label>Time (ms)</label><input id="convTime" placeholder="1890" oninput="convTimeDist()"><span class="result" id="convTDResult1"></span></div>
+        <div class="conv-row"><label>Distance (mm)</label><input id="convDist" placeholder="40" oninput="convTimeDist()"><span class="result" id="convTDResult2"></span></div>
+      </div>
+      <div class="conv-card"><h4>📄 Media Size Lookup</h4>
+        <div class="conv-row"><label>Size Code</label><input id="convMedia" placeholder="LTR or 0x0C" oninput="convMediaLookup()"><span class="result" id="convMediaResult"></span></div>
+        <div style="font-size:9px;color:var(--txt3);margin-top:4px;">Per spec MSN/QDI: A4=0x02, LGL=0x04, B5=0x06, A5=0x08, EXEC=0x0A, LTR=0x0C</div>
+      </div>
+      <div class="conv-card"><h4>🗺️ SLPQ Full Decode</h4>
+        <div class="conv-row"><label>SLPQ (hex)</label><input id="convSLPQ" placeholder="0x00000001" oninput="convSLPQDecode()"></div>
+        <div id="convSLPQResult" style="font-size:10px;margin-top:6px;line-height:1.8;"></div>
+      </div>
+      <div class="conv-card"><h4>🧭 PaperPort Address Decode</h4>
+        <div class="conv-row"><label>Addr (hex)</label><input id="convAddr" placeholder="0x80" oninput="convAddrDecode()"><span class="result" id="convAddrResult"></span></div>
+        <div style="font-size:9px;color:var(--txt3);margin-top:4px;">0x00-0x05=Trunk · 0x7F=Broadcast · 0x80-0xC0=Slave · 0xFE=Link Reset</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TAB 5: OPCODES -->
+<div class="tab-content" id="tab-opcodes">
+  <div style="padding:0 28px 28px;">
+    <div class="section"><div class="section-hd">📋 PaperPort III Command Reference <span class="cnt">from PaperPortSpecification.doc · pp. 214-219</span></div>
+    <div class="section-bd" style="max-height:none;">
+      <table class="opcode-table" id="opcodeTable">
+        <thead><tr><th>Opcode</th><th>Mnemonic</th><th>Category</th><th>Description</th><th>Multi-Byte</th></tr></thead>
+        <tbody id="opcodeBody"></tbody>
+      </table>
+    </div></div>
+    <div class="section" style="margin-top:14px;"><div class="section-hd">🗺️ SLPQ Sub-Command Reference (Spec §1.12.17)</div>
+    <div class="section-bd" id="slpqRef" style="max-height:none;"></div></div>
+    <div class="section" style="margin-top:14px;"><div class="section-hd">📄 Media Size Enum Reference (Spec §1.12.2 MSN / §1.16.1.2.1 QDI)</div>
+    <div class="section-bd" id="mediaRef" style="max-height:none;"></div></div>
+  </div>
+</div>
+
+<script>
+/* =====================================================================
+   PaperPort Pro Analyzer v5.0 — Xerox Red
+   ===================================================================== */
+
+let activeFilters=new Set(['PickPage','SLPQ','QDMG','SPS']);
+let allParsed={},rawLines=[],globalPicks=[],globalAlarms=[],globalSLPQ=[],globalPPath=[],globalBLDC=[],globalJobs=[],globalSPS=[],globalGaps=[],globalSeq=[];
+
+function initApp(){
+  const dz=document.getElementById('dropzone');
+  if(dz){
+    dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('dragover');});
+    dz.addEventListener('dragleave',()=>dz.classList.remove('dragover'));
+    dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('dragover');const r=new FileReader();r.onload=ev=>{const ta=document.getElementById('logInput');if(ta)ta.value=ev.target.result;};r.readAsText(e.dataTransfer.files[0]);});
+  }
+  const fc=document.getElementById('filterChips');
+  if(fc){fc.addEventListener('click',e=>{if(!e.target.classList.contains('filter-chip'))return;e.target.classList.toggle('active');const f=e.target.dataset.f;if(e.target.classList.contains('active'))activeFilters.add(f);else activeFilters.delete(f);});}
+}
+if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',initApp);}else{initApp();}
+
+function switchTab(tab){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+  const btn=document.querySelector(`.tab-btn[onclick*="${tab}"]`);if(btn)btn.classList.add('active');
+  const content=document.getElementById('tab-'+tab);if(content)content.classList.add('active');
+  if(tab==='sequence')buildSequenceView();
+}
+
+const toHex=v=>'0x'+v.toString(16).padStart(2,'0').toUpperCase();
+const toHex32=v=>'0x'+(v>>>0).toString(16).padStart(8,'0').toUpperCase();
+const escHtml=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const fmtTs=t=>typeof t==='number'?t.toFixed(3):t;
+
+// ── MAIN ANALYZE ──
+function analyze(){
+  const logEl=document.getElementById('logInput');if(!logEl)return;
+  const log=logEl.value;
+  if(!log.trim())return;
+  const customRegexEl=document.getElementById('customRegex');
+  const customRegex=customRegexEl?customRegexEl.value.trim():'';
+  rawLines=log.split('\n');
+  let patterns=[...activeFilters];if(customRegex)patterns.push(customRegex);
+  const regex=patterns.length>0?new RegExp(patterns.join('|'),'i'):null;
+
+  const picks=[],gaps=[],slpqEvents=[],spsEvents=[],alarms=[],paperPathEvents=[];
+  const transferServoEvents=[],tpsEvents=[],sideInfoEvents=[],lsuEvents=[];
+  const bldcEvents=[],supplyEvents=[],epEvents=[],allFiltered=[];
+  const qds1Events=[],ptcEvents=[],docEvents=[],dmidEvents=[];
+  const qdqEvents=[],qdtEvents=[],qdiEvents=[],qdmEvents=[],jamEvents=[];
+
+  rawLines.forEach((line,i)=>{
+    if(regex&&!regex.test(line))return;
+    let parsed=line.replace(/0x[0-9A-Fa-f]+/g,h=>`<span class="hex-link" onclick="decodeHex('${h}','${escHtml(line).replace(/'/g,"\\'")}')">${h}</span>`);
+    allFiltered.push({idx:i,html:parsed,raw:line});
+
+    const pm=line.match(/^\s*([\d.]+).*PickPage/);
+    if(pm){const t=parseFloat(pm[1]);if(!isNaN(t))picks.push({time:t,line:i,raw:line});}
+
+    if(line.includes('QDMG')){const h=line.match(/0x[0-9A-Fa-f]{8}/),tm=line.match(/^([\d.]+)/);if(h){const v=parseInt(h[0],16);gaps.push({time:tm?parseFloat(tm[1]):null,hex:h[0],raw:v,b1:(v>>24)&255,b2:(v>>16)&255,b3:(v>>8)&255,b4:v&255,gap:((v>>16)&255)<<8|((v>>8)&255),line:i,rawLine:line});}}
+
+    if(line.includes('SLPQ')){const h=line.match(/0x[0-9A-Fa-f]{8}/),tm=line.match(/^([\d.]+)/);if(h){const v=parseInt(h[0],16);slpqEvents.push({time:tm?parseFloat(tm[1]):null,hex:h[0],raw:v,subcmd:(v>>>24)&15,page:(v>>16)&255,binDest:(v>>8)&255,trayOffset:v&255,line:i,rawLine:line});}}
+
+    if(line.includes('SPS')){const h=line.match(/0x[0-9A-Fa-f]{8}/),tm=line.match(/^([\d.]+)/);if(h){const v=parseInt(h[0],16),sr=((v>>16)&255)<<8|((v>>8)&255);spsEvents.push({time:tm?parseFloat(tm[1]):null,hex:h[0],raw:v,speedRaw:sr,speedLinear:sr/16,line:i,rawLine:line});}}
+
+    if(line.includes('<ALARM')){const cd=line.match(/AlarmCode='(\d+)'/),msg=line.match(/AlarmMessage='([^']+)'/),tm=line.match(/EngineTime='\s*([\d.]+)'/);alarms.push({time:tm?parseFloat(tm[1]):null,code:cd?cd[1]:'?',message:msg?msg[1]:line,line:i,rawLine:line});}
+
+    if(line.includes('<PAPER_PATH')){const tm=line.match(/EngineTime='\s*([\d.]+)'/),sid=line.match(/PrinterSideCount='(\d+)'/),keys={};const kvRe=/(\w+)='([^']*)'/g;let m;while((m=kvRe.exec(line))!==null)keys[m[1]]=m[2];paperPathEvents.push({time:tm?parseFloat(tm[1]):null,sideCount:sid?parseInt(sid[1]):null,keys,line:i,rawLine:line});}
+
+    if(line.includes('<TRANSFER_SERVO')){const tm=line.match(/EngineTime='\s*([\d.]+)'/),tp=line.match(/ServoType='(\w+)'/),cv=line.match(/ChargeV='(-?\d+)'/),sv=line.match(/CalculatedServoV='(-?\d+)'/);transferServoEvents.push({time:tm?parseFloat(tm[1]):null,servoType:tp?tp[1]:'?',chargeV:cv?cv[1]:null,servoV:sv?sv[1]:null,line:i});}
+
+    if(line.includes('<TPS ')){const tm=line.match(/EngineTime='\s*([\d.]+)'/),lb=line.match(/Prefix_Label='(\w+)'/),cl=line.match(/Prefix_Color='(\w+)'/),op=line.match(/OpPoint='([\d.]+)'/);tpsEvents.push({time:tm?parseFloat(tm[1]):null,label:lb?lb[1]:'?',color:cl?cl[1]:'?',opPoint:op?parseFloat(op[1]):null,line:i});}
+
+    if(line.includes('<SIDE_INFO')){const tm=line.match(/EngineTime='\s*([\d.]+)'/),md=line.match(/ColorMode='(\w+)'/),sp=line.match(/ProcessSpeed='([^']+)'/),dp=line.match(/SimplexDuplexSideType='(\w+)'/),mz=line.match(/MediaSize='([^']+)'/),tr=line.match(/SourceTray='([^']+)'/);sideInfoEvents.push({time:tm?parseFloat(tm[1]):null,colorMode:md?md[1]:'?',speed:sp?sp[1]:'?',duplex:dp?dp[1]:'?',media:mz?mz[1]:'?',tray:tr?tr[1]:'?',line:i});}
+
+    if(line.includes('<LSU')){const tm=line.match(/EngineTime='\s*([\d.]+)'/),lk=line.match(/LockTime_ms='(\d+)'/),rp=line.match(/MirrorMotorRpm='(\d+)'/);lsuEvents.push({time:tm?parseFloat(tm[1]):null,lockMs:lk?lk[1]:null,rpm:rp?rp[1]:null,line:i});}
+
+    if(line.includes('<BLDC_MONITOR')||line.includes('<BLDC_HEALTH_CHECK')){const tm=line.match(/EngineTime='\s*([\d.]+)'/),mt=line.match(/MotorId='(\w+)'/),bh=line.match(/Behavior='([^']+)'/),ev=line.match(/Event='(\w+)'/);bldcEvents.push({time:tm?parseFloat(tm[1]):null,motor:mt?mt[1]:'?',behavior:bh?bh[1]:'?',event:ev?ev[1]:'?',line:i,rawLine:line});}
+
+    if(line.includes('<SUPPLIES_INFO')||line.includes('<TONER_LEVEL')||line.includes('<DEV_TONER'))supplyEvents.push({line:i,rawLine:line});
+    if(line.includes('<EP ')){const tm=line.match(/EngineTime='\s*([\d.]+)'/),fl=line.match(/IsFlexed='(\d+)'/);epEvents.push({time:tm?parseFloat(tm[1]):null,flexed:fl?fl[1]:'?',line:i});}
+    if(line.includes('QDS1')){const h=line.match(/0x[0-9A-Fa-f]{8}/),tm=line.match(/^([\d.]+)/);if(h)qds1Events.push({time:tm?parseFloat(tm[1]):null,hex:h[0],raw:parseInt(h[0],16),line:i});}
+    if(line.includes('PTC')){const h=line.match(/0x[0-9A-Fa-f]{4,8}/),tm=line.match(/^([\d.]+)/);if(h)ptcEvents.push({time:tm?parseFloat(tm[1]):null,hex:h[0],raw:parseInt(h[0],16),line:i,rawLine:line});}
+    if(line.includes('DOC')){const h=line.match(/0x[0-9A-Fa-f]{8}/),tm=line.match(/^([\d.]+)/);if(h)docEvents.push({time:tm?parseFloat(tm[1]):null,hex:h[0],raw:parseInt(h[0],16),line:i});}
+    if(line.includes('DMID')){const h=line.match(/0x[0-9A-Fa-f]{8}/),tm=line.match(/^([\d.]+)/);if(h)dmidEvents.push({time:tm?parseFloat(tm[1]):null,hex:h[0],raw:parseInt(h[0],16),line:i});}
+
+    if(line.includes('QDQ')){const h=line.match(/0x[0-9A-Fa-f]{8}/),tm=line.match(/^([\d.]+)/);if(h){const v=parseInt(h[0],16);qdqEvents.push({time:tm?parseFloat(tm[1]):null,hex:h[0],raw:v,state:(v>>8)&0xFF,line:i,rawLine:line});}}
+    if(line.includes('QDT')){const h=line.match(/0x[0-9A-Fa-f]{8}/),tm=line.match(/^([\d.]+)/);if(h){const v=parseInt(h[0],16);qdtEvents.push({time:tm?parseFloat(tm[1]):null,hex:h[0],raw:v,devType:v&255,trayId:(v>>8)&255,line:i,rawLine:line});}}
+    if(line.includes('QDI')){const h=line.match(/0x[0-9A-Fa-f]{8}/),tm=line.match(/^([\d.]+)/);if(h){const v=parseInt(h[0],16);qdiEvents.push({time:tm?parseFloat(tm[1]):null,hex:h[0],raw:v,cap:(v>>24)&255,size:(v>>16)&255,flags:(v>>8)&255,line:i,rawLine:line});}}
+    if(line.includes('QDM')){const h=line.match(/0x[0-9A-Fa-f]{8}/),tm=line.match(/^([\d.]+)/);if(h){const v=parseInt(h[0],16);qdmEvents.push({time:tm?parseFloat(tm[1]):null,hex:h[0],raw:v,mode:v&255,speed:(v>>8)&255,line:i,rawLine:line});}}
+
+    if(line.includes('PAGE_CANCELLED_NFY')||line.includes('PAPER_JAM')||line.match(/[Jj]am\s*[:=]|JAM_CAUSE|Jam_Cause/i)){const tm=line.match(/^([\d.]+)/)||line.match(/EngineTime='\s*([\d.]+)'/);const pg=line.match(/0x([0-9A-Fa-f]{2})\s*0x/);const reason=line.match(/PAGE_CANCELLED_NFY|PAPER_JAM|Jam.*?(?:Cause|cause|CAUSE)[^']*/i);jamEvents.push({time:tm?parseFloat(tm[1]):null,pageId:pg?pg[1]:null,reason:reason?reason[0]:'Jam/Cancel',line:i,rawLine:line});}
+  });
+
+  const pickDeltas=[];for(let i=1;i<picks.length;i++)pickDeltas.push({from:picks[i-1].time,to:picks[i].time,delta:picks[i].time-picks[i-1].time});
+  const slpqDrops=[];let lastPage=null;slpqEvents.forEach((s,i)=>{if(lastPage!==null&&s.page!==null&&s.page>lastPage+1)slpqDrops.push({expected:lastPage+1,got:s.page,idx:i});if(s.page!==null)lastPage=s.page;});
+  const gapPickPairs=[];for(let i=0;i<Math.min(pickDeltas.length,gaps.length);i++)gapPickPairs.push({pickDelta:pickDeltas[i],gap:gaps[i]});
+
+  const jobs=detectJobs(rawLines,picks,paperPathEvents,sideInfoEvents);
+
+  // Sequence extraction for later view
+  globalSeq=extractSequence(rawLines);
+
+  globalPicks=picks;globalAlarms=alarms;globalSLPQ=slpqEvents;globalPPath=paperPathEvents;globalBLDC=bldcEvents;globalJobs=jobs;globalSPS=spsEvents;globalGaps=gaps;
+  allParsed={picks,gaps,slpqEvents,spsEvents,alarms,paperPathEvents,transferServoEvents,tpsEvents,sideInfoEvents,lsuEvents,bldcEvents,supplyEvents,epEvents,qds1Events,ptcEvents,docEvents,dmidEvents,qdqEvents,qdtEvents,qdiEvents,qdmEvents,jamEvents,pickDeltas,slpqDrops,gapPickPairs,jobs};
+
+  const setStat=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
+  setStat('statPages',picks.length);setStat('statGaps',gaps.length);setStat('statSLPQ',slpqEvents.length);
+  setStat('statAlarms',alarms.length);setStat('statJobs',jobs.length);
+  setStat('statAvgDelta',pickDeltas.length>0?(pickDeltas.reduce((a,b)=>a+b.delta,0)/pickDeltas.length).toFixed(3)+'s':'—');
+
+  let html='';
+  if(alarms.length>0)html+=`<div class="alert"><span>⚠️</span><strong>${alarms.length} alarm(s):</strong> ${[...new Set(alarms.map(a=>a.code))].join(', ')}</div>`;
+  if(slpqDrops.length>0)html+=`<div class="alert"><span>📉</span><strong>${slpqDrops.length} page drop(s)</strong> in SLPQ.</div>`;
+  if(jamEvents.length>0)html+=`<div class="alert"><span>🛑</span><strong>${jamEvents.length} jam/cancellation(s) detected!</strong></div>`;
+
+  html+=buildSection('📋 Filtered Log',`${allFiltered.length} lines`,allFiltered.map(f=>`<div style="padding:2px 0;font-size:10px;font-family:monospace;border-bottom:1px solid #FBF3F3;">${f.html}</div>`).join(''));
+
+  if(pickDeltas.length>0){
+    let r='';pickDeltas.forEach((d,i)=>{let bd='bg',st='OK';if(d.delta<1.5){bd='bb';st='⚠ EARLY → JAM RISK';}else if(d.delta>10){bd='bw';st='⏳ LATE';}
+    r+=`<tr><td>${i+1}</td><td class="mono">${fmtTs(d.from)}→${fmtTs(d.to)}</td><td class="mono" style="font-weight:700;">Δ ${d.delta.toFixed(3)}s</td><td class="mono">${gaps[Math.min(i,gaps.length-1)]?gaps[Math.min(i,gaps.length-1)].gap:'—'}</td><td><span class="${bd}">${st}</span></td></tr>`;});
+    html+=buildSection('⏱️ PickPage Timing',`${pickDeltas.length} intervals`,`<table class="data-table"><thead><tr><th>#</th><th>From→To</th><th>Delta</th><th>Gap</th><th>Status</th></tr></thead><tbody>${r}</tbody></table>`);
+  }
+
+  if(jobs.length>0){
+    let jr='';jobs.forEach((j,i)=>{
+      const flowSummary=buildJobFlowSummary(j,rawLines);
+      jr+=`<div class="job-card" onclick="showJobModal(${i})" title="Click for full job flow">
+        <div class="job-id">📦 Job #${i+1}: Page ID ${j.pageId} <span style="font-size:9px;color:var(--blue);">(click for details)</span></div>
+        <div class="job-meta">Pages: ${j.pages} · Media: ${j.media||'?'} · Tray: ${j.tray||'?'} · Speed: ${j.speed||'?'} · Color: ${j.colorMode||'?'} · ${j.duplex||'?'} · SideCounts: ${j.startSide||'?'}→${j.endSide||'?'}</div>
+        <div class="job-flow">${flowSummary}</div></div>`;});
+    html+=buildSection('🆔 Job Detection <span style="font-size:9px;color:var(--txt3);">— click any job for full flow</span>',`${jobs.length} jobs`,jr);
+  }
+
+  if(slpqEvents.length>0){
+    let r='';const seen=new Set();slpqEvents.forEach((s,i)=>{let act=seen.has(s.page)?'Update':'Submit';seen.add(s.page);let dw='';const dr=slpqDrops.find(d=>d.idx===i);if(dr)dw=`<br><span class="bb">⚠ DROPPED: exp ${dr.expected}, got ${dr.got}</span>`;
+    const subcmds={0:'Submit New',1:'Update Last',2:'Remove Last'};
+    r+=`<tr><td>${i+1}</td><td class="mono">${s.page??'?'}</td><td>${subcmds[s.subcmd]||act}</td><td><span class="bi">Bin ${s.binDest}</span></td><td class="mono">${s.hex?`<span class="hex-link" onclick="decodeHex('${s.hex}','${escHtml(s.rawLine).replace(/'/g,"\\'")}')">${s.hex}</span>`:'—'}</td><td>${dw}</td></tr>`;});
+    html+=buildSection('🗺️ SLPQ Routing',`${slpqEvents.length} events · ${slpqDrops.length} drops`,`<table class="data-table"><thead><tr><th>#</th><th>Page</th><th>Action</th><th>Bin</th><th>HEX</th><th>Alert</th></tr></thead><tbody>${r}</tbody></table>`);
+  }
+
+  if(gaps.length>0){
+    let r='';gaps.forEach((g,i)=>{r+=`<tr><td>${i+1}</td><td class="mono">${g.time??'?'}</td><td class="mono"><span class="hex-link" onclick="decodeHex('${g.hex}','${escHtml(g.rawLine).replace(/'/g,"\\'")}')">${g.hex}</span></td><td class="mono">${g.gap}</td><td class="mono">${(g.gap).toFixed(1)} mm</td></tr>`;});
+    html+=buildSection('📏 QDMG Minimum Gap',`${gaps.length}`,`<table class="data-table"><thead><tr><th>#</th><th>Time</th><th>HEX</th><th>Gap (enc)</th><th>Gap (mm)</th></tr></thead><tbody>${r}</tbody></table>`);
+  }
+
+  if(spsEvents.length>0){
+    let r='';spsEvents.forEach((s,i)=>{r+=`<tr><td>${i+1}</td><td class="mono">${s.time??'?'}</td><td class="mono"><span class="hex-link" onclick="decodeHex('${s.hex}','${escHtml(s.rawLine).replace(/'/g,"\\'")}')">${s.hex}</span></td><td class="mono">${s.speedRaw}</td><td class="mono" style="font-weight:700;">${s.speedLinear.toFixed(3)} mm/s</td></tr>`;});
+    html+=buildSection('⚡ SPS Process Speed',`${spsEvents.length}`,`<table class="data-table"><thead><tr><th>#</th><th>Time</th><th>HEX</th><th>Raw</th><th>Linear</th></tr></thead><tbody>${r}</tbody></table>`);
+  }
+
+  if(alarms.length>0){let r='';alarms.forEach((a,i)=>{r+=`<tr><td>${i+1}</td><td class="mono">${a.time??'?'}</td><td class="mono" style="font-weight:700;color:var(--xr);">${a.code}</td><td style="font-size:10px;">${escHtml(a.message)}</td></tr>`;});html+=buildSection('🚨 Alarms',`${alarms.length}`,`<table class="data-table"><thead><tr><th>#</th><th>Time</th><th>Code</th><th>Message</th></tr></thead><tbody>${r}</tbody></table>`);}
+
+  if(paperPathEvents.length>0){let r='';paperPathEvents.forEach((pp,i)=>{let d=Object.entries(pp.keys).filter(([k])=>!['StringId','EngineTime','RealTime'].includes(k)).map(([k,v])=>`${k}=${v}`).join(', ');r+=`<tr><td>${i+1}</td><td class="mono">${pp.time??'?'}</td><td class="mono">${pp.sideCount??'?'}</td><td style="font-size:9px;">${escHtml(d)}</td></tr>`;});html+=buildSection('🛤️ PAPER_PATH',`${paperPathEvents.length}`,`<table class="data-table"><thead><tr><th>#</th><th>Time</th><th>Side#</th><th>Details</th></tr></thead><tbody>${r}</tbody></table>`);}
+
+  if(transferServoEvents.length>0){let r='';transferServoEvents.forEach((ts,i)=>{r+=`<tr><td>${i+1}</td><td class="mono">${ts.time??'?'}</td><td><span class="bi">${ts.servoType}</span></td><td class="mono">${ts.chargeV??'—'}</td><td class="mono">${ts.servoV??'—'}</td></tr>`;});html+=buildSection('🔌 TRANSFER_SERVO',`${transferServoEvents.length}`,`<table class="data-table"><thead><tr><th>#</th><th>Time</th><th>Type</th><th>ChargeV</th><th>ServoV</th></tr></thead><tbody>${r}</tbody></table>`);}
+
+  if(sideInfoEvents.length>0){let r='';const um=new Map();sideInfoEvents.forEach(si=>{const k=`${si.media}|${si.tray}|${si.speed}|${si.colorMode}`;if(!um.has(k))um.set(k,si);});um.forEach(si=>{r+=`<tr><td><span class="bi">${si.colorMode}</span></td><td>${si.speed}</td><td>${si.duplex}</td><td>${si.media}</td><td>${si.tray}</td></tr>`;});html+=buildSection('📄 SIDE_INFO',`${um.size} configs`,`<table class="data-table"><thead><tr><th>Color</th><th>Speed</th><th>Type</th><th>Media</th><th>Tray</th></tr></thead><tbody>${r}</tbody></table>`);}
+
+  if(lsuEvents.length>0){let r='';lsuEvents.forEach((ls,i)=>{r+=`<tr><td>${i+1}</td><td class="mono">${ls.time??'?'}</td><td class="mono">${ls.lockMs}ms</td><td class="mono">${ls.rpm}RPM</td></tr>`;});html+=buildSection('🔦 LSU',`${lsuEvents.length}`,`<table class="data-table"><thead><tr><th>#</th><th>Time</th><th>Lock</th><th>RPM</th></tr></thead><tbody>${r}</tbody></table>`);}
+
+  if(bldcEvents.length>0){let r='';bldcEvents.forEach((bm,i)=>{r+=`<tr><td>${i+1}</td><td class="mono">${bm.time??'?'}</td><td class="mono" style="font-weight:700;">${bm.motor}</td><td style="font-size:9px;">${bm.behavior}</td><td>${bm.event==='Start'?'<span class="bg">Start</span>':bm.event==='Stop'?'<span class="bb">Stop</span>':bm.event}</td></tr>`;});html+=buildSection('🔧 BLDC Motors',`${bldcEvents.length}`,`<table class="data-table"><thead><tr><th>#</th><th>Time</th><th>Motor</th><th>Behavior</th><th>Event</th></tr></thead><tbody>${r}</tbody></table>`);}
+
+  if(tpsEvents.length>0){let r='';tpsEvents.forEach((tp,i)=>{r+=`<tr><td>${i+1}</td><td class="mono">${tp.time??'?'}</td><td style="font-weight:700;">${tp.label}</td><td>${tp.color}</td><td class="mono">${tp.opPoint??'—'}</td></tr>`;});html+=buildSection('🎨 TPS',`${tpsEvents.length}`,`<table class="data-table"><thead><tr><th>#</th><th>Time</th><th>Label</th><th>Color</th><th>OpPt</th></tr></thead><tbody>${r}</tbody></table>`);}
+
+  if(ptcEvents.length>0){let r='';ptcEvents.forEach((p,i)=>{const spd=ptcToSpeed(p.raw);r+=`<tr><td>${i+1}</td><td class="mono">${p.time??'?'}</td><td class="mono">${p.hex}</td><td class="mono">${p.raw}</td><td class="mono">${spd.toFixed(2)} mm/s</td></tr>`;});html+=buildSection('⚙️ PTC Speed Control',`${ptcEvents.length}`,`<table class="data-table"><thead><tr><th>#</th><th>Time</th><th>HEX</th><th>Dec</th><th>Speed</th></tr></thead><tbody>${r}</tbody></table>`);}
+
+  if(docEvents.length>0||dmidEvents.length>0){let r='';docEvents.forEach((d,i)=>{r+=`<tr><td>${i+1}</td><td class="mono">${d.time??'?'}</td><td><span class="bi">DOC</span></td><td class="mono">${d.hex}</td></tr>`;});dmidEvents.forEach((d,i)=>{r+=`<tr><td>${docEvents.length+i+1}</td><td class="mono">${d.time??'?'}</td><td><span class="bi">DMID</span></td><td class="mono">${d.hex}</td></tr>`;});html+=buildSection('📨 DOC/DMID',`${docEvents.length+dmidEvents.length}`,`<table class="data-table"><thead><tr><th>#</th><th>Time</th><th>Type</th><th>HEX</th></tr></thead><tbody>${r}</tbody></table>`);}
+
+  if(qdqEvents.length>0){let r='';qdqEvents.forEach((q,i)=>{r+=`<tr><td>${i+1}</td><td class="mono">${q.time??'?'}</td><td class="mono"><span class="hex-link" onclick="decodeHex('${q.hex}','${escHtml(q.rawLine).replace(/'/g,"\\'")}')">${q.hex}</span></td><td class="mono">${q.state===0?'Quiesced':q.state===0x80?'Not Quiesced':'Processing'}</td></tr>`;});html+=buildSection('🔧 QDQ — Device Quiesce',`${qdqEvents.length}`,`<table class="data-table"><thead><tr><th>#</th><th>Time</th><th>HEX</th><th>State</th></tr></thead><tbody>${r}</tbody></table>`);}
+
+  if(qdtEvents.length>0){let r='';const types={0:'Nop',1:'Smart Input Tray',2:'Feeder',3:'Envelope Feeder',4:'Duplexer',5:'Modular Output Stacker',6:'Output Sorter',7:'Mailbox',8:'Sorter/Mailbox',9:'HC Output Stacker',0x0A:'Modular Mailbox',0x0B:'Modular HC Stacker',0x0C:'Modular Stapler',0x20:'SR Stapler',0x21:'SR Offset Stacker',0x30:'HCOS',0x31:'HCOF',0x32:'HCIT',0x41:'Color EP Tray'};qdtEvents.forEach((q,i)=>{r+=`<tr><td>${i+1}</td><td class="mono">${q.time??'?'}</td><td class="mono"><span class="hex-link" onclick="decodeHex('${q.hex}','${escHtml(q.rawLine).replace(/'/g,"\\'")}')">${q.hex}</span></td><td class="mono" style="font-weight:700;">${q.devType} (${types[q.devType]||'?'})</td><td class="mono">Tray ${q.trayId}</td></tr>`;});html+=buildSection('🔖 QDT — Device Type / Tray ID',`${qdtEvents.length}`,`<table class="data-table"><thead><tr><th>#</th><th>Time</th><th>HEX</th><th>Dev Type</th><th>Tray ID</th></tr></thead><tbody>${r}</tbody></table>`);}
+
+  if(qdiEvents.length>0){let r='';const szMap={0x00:'Unknown',0x02:'A4',0x04:'Legal',0x06:'B5',0x08:'A5',0x0A:'Executive',0x0C:'Letter',0x0E:'Custom',0x10:'Statement',0x11:'Folio',0x12:'A6',0x13:'Oficio'};qdiEvents.forEach((q,i)=>{r+=`<tr><td>${i+1}</td><td class="mono">${q.time??'?'}</td><td class="mono"><span class="hex-link" onclick="decodeHex('${q.hex}','${escHtml(q.rawLine).replace(/'/g,"\\'")}')">${q.hex}</span></td><td class="mono">${q.cap}%</td><td>${szMap[q.size]||('0x'+q.size.toString(16))}</td><td class="mono">${toHex(q.flags)}</td></tr>`;});html+=buildSection('📋 QDI — Device Inventory',`${qdiEvents.length}`,`<table class="data-table"><thead><tr><th>#</th><th>Time</th><th>HEX</th><th>Capacity</th><th>Size</th><th>Flags</th></tr></thead><tbody>${r}</tbody></table>`);}
+
+  if(qdmEvents.length>0){let r='';const modes={0:'Stop',1:'Forward',2:'Reverse',3:'Jog'};qdmEvents.forEach((q,i)=>{r+=`<tr><td>${i+1}</td><td class="mono">${q.time??'?'}</td><td class="mono"><span class="hex-link" onclick="decodeHex('${q.hex}','${escHtml(q.rawLine).replace(/'/g,"\\'")}')">${q.hex}</span></td><td class="mono">${q.mode} (${modes[q.mode]||'?'})</td><td class="mono">${q.speed}</td></tr>`;});html+=buildSection('⚙️ QDM — Debug Message',`${qdmEvents.length}`,`<table class="data-table"><thead><tr><th>#</th><th>Time</th><th>HEX</th><th>Mode</th><th>Speed</th></tr></thead><tbody>${r}</tbody></table>`);}
+
+  if(jamEvents.length>0){let r='';jamEvents.forEach((j,i)=>{r+=`<tr><td>${i+1}</td><td class="mono" style="color:var(--xr);font-weight:700;">${j.time??'?'}</td><td class="mono">${j.pageId? '0x'+j.pageId.toUpperCase() :'?'}</td><td style="font-size:10px;"><span class="bb">⚠ ${escHtml(j.reason)}</span></td></tr>`;});html+=buildSection('🚨 JAM — Paper Jams &amp; Cancellations',`${jamEvents.length}`,`<table class="data-table"><thead><tr><th>#</th><th>Time</th><th>Page</th><th>Reason</th></tr></thead><tbody>${r}</tbody></table>`);}
+
+  if(gapPickPairs.length>0){
+    let bars='';const mx=Math.max(...gapPickPairs.map(p=>p.pickDelta.delta),.1);
+    gapPickPairs.forEach((p,i)=>{const pct=Math.min((p.pickDelta.delta/mx)*100,100);let fc='green';if(p.pickDelta.delta<1.5)fc='red';else if(p.pickDelta.delta>10)fc='amber';
+    bars+=`<div class="bar-row"><div class="bar-label">Pick ${i+1}→${i+2}</div><div class="bar-track"><div class="bar-fill ${fc}" style="width:${pct}%;background:${fc==='red'?'var(--xr)':fc==='amber'?'var(--warn)':'var(--green)'};">${p.pickDelta.delta.toFixed(3)}s</div></div><div style="font-size:9px;width:45px;">G:${p.gap.gap}</div></div>`;});
+    html+=buildSection('📊 Interval Distribution',`${gapPickPairs.length} pairs`,`<div style="padding:8px 0;">${bars}</div>`);
+  }
+
+  html+=buildSection('📋 Session Summary','',`<div class="kv-grid"><div class="kv-item"><div class="k">Pages</div><div class="v">${picks.length}</div></div><div class="kv-item"><div class="k">SLPQ</div><div class="v">${slpqEvents.length} (${slpqDrops.length} drops)</div></div><div class="kv-item"><div class="k">QDMG</div><div class="v">${gaps.length}</div></div><div class="kv-item"><div class="k">Alarms</div><div class="v" style="color:var(--xr);">${alarms.length}</div></div><div class="kv-item"><div class="k">Jobs</div><div class="v">${jobs.length}</div></div><div class="kv-item"><div class="k">SPS</div><div class="v">${spsEvents.length}</div></div><div class="kv-item"><div class="k">PAPER_PATH</div><div class="v">${paperPathEvents.length}</div></div><div class="kv-item"><div class="k">Transfer Servo</div><div class="v">${transferServoEvents.length}</div></div><div class="kv-item"><div class="k">TPS</div><div class="v">${tpsEvents.length}</div></div><div class="kv-item"><div class="k">LSU</div><div class="v">${lsuEvents.length}</div></div><div class="kv-item"><div class="k">BLDC</div><div class="v">${bldcEvents.length}</div></div><div class="kv-item"><div class="k">PTC</div><div class="v">${ptcEvents.length}</div></div><div class="kv-item"><div class="k">JAMs</div><div class="v" style="color:var(--xr);">${jamEvents.length}</div></div><div class="kv-item"><div class="k">Filtered</div><div class="v">${allFiltered.length}</div></div><div class="kv-item"><div class="k">Raw Lines</div><div class="v">${rawLines.length}</div></div></div>`);
+
+  const outEl=document.getElementById('output');
+  if(outEl)outEl.innerHTML=html;
+  buildTimeline();
+  if(outEl)outEl.scrollIntoView({behavior:'smooth'});
+}
+
+function buildSection(title,count,body){return`<div class="section"><div class="section-hd"><span>${title}</span><span class="cnt">${count}</span></div><div class="section-bd">${body}</div></div>`;}
+
+// ── JOB DETECTION ──
+function detectJobs(lines,picks,ppath,sideInfo){
+  const jobs=[];
+  const pageIdRe=/page ID:\s*(0x[0-9A-Fa-f]+)/i;
+  const pageIdNumRe=/PageId\s*=\s*(\d+)/i;
+  const sideCountRe=/PrinterSideCount='(\d+)'/;
+  const pageIdLines=[];
+  lines.forEach((line,i)=>{
+    const pid=line.match(pageIdRe);const pidn=line.match(pageIdNumRe);
+    if(pid||pidn){
+      const id=pid?pid[1]:pidn?`0x${parseInt(pidn[1]).toString(16).toUpperCase()}`:null;
+      if(id)pageIdLines.push({pageId:id,line:i});
+    }
+  });
+  const seenIds=new Set();
+  pageIdLines.forEach(({pageId,line})=>{
+    if(seenIds.has(pageId))return;seenIds.add(pageId);
+    let media=null,tray=null,speed=null,colorMode=null,duplex=null;
+    let startSide=null,endSide=null,pages=1;
+    let startLine=Math.max(0,line-50),endLine=Math.min(lines.length,line+100);
+    for(let j=startLine;j<endLine;j++){
+      const l=lines[j];
+      const mz=l.match(/MediaSize='([^']+)'/);if(mz)media=mz[1];
+      const tr=l.match(/SourceTray='([^']+)'/);if(tr)tray=tr[1];
+      const sp=l.match(/ProcessSpeed='([^']+)'/);if(sp)speed=sp[1];
+      const cm=l.match(/ColorMode='(\w+)'/);if(cm)colorMode=cm[1];
+      const dp=l.match(/SimplexDuplexSideType='(\w+)'/);if(dp)duplex=dp[1];
+      const sc=l.match(sideCountRe);if(sc){const s=parseInt(sc[1]);if(startSide===null||s<startSide)startSide=s;if(endSide===null||s>endSide)endSide=s;}
+    }
+    jobs.push({pageId,line,pages,media,tray,speed,colorMode,duplex,startSide,endSide,startLine,endLine});
+  });
+  return jobs;
+}
+
+function buildJobFlowSummary(job,lines){
+  if(!job.startLine)return '';
+  const flow=[];
+  for(let i=job.startLine;i<=job.endLine;i++){
+    const l=lines[i];
+    if(l.includes('PickPage')){const tm=l.match(/([\d.]+)/);flow.push(`🔵 Pick @${tm?parseFloat(tm[1]).toFixed(3):'?'}s`);}
+    if(l.includes('PickCommandTimeStamp')){const tm=l.match(/EngineTime='\s*([\d.]+)'/);flow.push(`📋 PickCmd @${tm?parseFloat(tm[1]).toFixed(3):'?'}s`);}
+    if(l.includes('S1AltSensorMakeTimestamp')){const tm=l.match(/EngineTime='\s*([\d.]+)'/);flow.push(`📍 S1▲ @${tm?parseFloat(tm[1]).toFixed(3):'?'}s`);}
+    if(l.includes('S2BumpExitSensorMakeTimestamp')){const tm=l.match(/EngineTime='\s*([\d.]+)'/);flow.push(`📍 Bump▲ @${tm?parseFloat(tm[1]).toFixed(3):'?'}s`);}
+    if(l.includes('FuserExitSensorMakeTimestamp')){const tm=l.match(/EngineTime='\s*([\d.]+)'/);flow.push(`🔥 Fuser▲ @${tm?parseFloat(tm[1]).toFixed(3):'?'}s`);}
+    if(l.includes('Image-Position Error')){const er=l.match(/(-?[\d.]+)\s*mm/);flow.push(`📐 ImgErr ${er?er[1]:'?'}mm`);}
+    if(l.includes('<SIDE_INFO')&&l.includes('PageEnd')){flow.push('✅ PageEnd');}
+  }
+  return flow.slice(0,8).join(' → ') + (flow.length>8?' … +'+(flow.length-8)+' more':'');
+}
+
+function showJobModal(jobIdx){
+  const job=globalJobs[jobIdx];if(!job)return;
+  const lines=rawLines;
+  let flowHtml='';
+  for(let i=job.startLine;i<=job.endLine;i++){
+    const l=lines[i];
+    let evt='',color='var(--xr)',icon='';
+    if(l.includes('PickPage')){const tm=l.match(/([\d.]+)/);evt=`PickPage @ ${tm?parseFloat(tm[1]).toFixed(3):'?'}s`;color='var(--blue)';icon='🔵';}
+    if(l.includes('PickCommandTimeStamp')){const tm=l.match(/EngineTime='\s*([\d.]+)'/);evt=`Pick Command @ ${tm?parseFloat(tm[1]).toFixed(3):'?'}s`;color='var(--warn)';icon='📋';}
+    if(l.includes('S1AltSensorMakeTimestamp')){const tm=l.match(/EngineTime='\s*([\d.]+)'/);evt=`S1 Sensor MAKE @ ${tm?parseFloat(tm[1]).toFixed(3):'?'}s`;color='var(--blue)';icon='📍';}
+    if(l.includes('S1AltSensorBreakTimestamp')){const tm=l.match(/EngineTime='\s*([\d.]+)'/);evt=`S1 Sensor BREAK @ ${tm?parseFloat(tm[1]).toFixed(3):'?'}s`;color='#7f8c8d';icon='📍';}
+    if(l.includes('S2BumpExitSensorMakeTimestamp')){const tm=l.match(/EngineTime='\s*([\d.]+)'/);evt=`Bump Exit MAKE @ ${tm?parseFloat(tm[1]).toFixed(3):'?'}s`;color='var(--green)';icon='📍';}
+    if(l.includes('S2BumpExitSensorBreakTimestamp')){const tm=l.match(/EngineTime='\s*([\d.]+)'/);evt=`Bump Exit BREAK @ ${tm?parseFloat(tm[1]).toFixed(3):'?'}s`;color='#7f8c8d';icon='📍';}
+    if(l.includes('FuserExitSensorMakeTimestamp')){const tm=l.match(/EngineTime='\s*([\d.]+)'/);evt=`Fuser Exit MAKE @ ${tm?parseFloat(tm[1]).toFixed(3):'?'}s`;color='var(--purple)';icon='🔥';}
+    if(l.includes('FuserExitSensorBreakTimestamp')){const tm=l.match(/EngineTime='\s*([\d.]+)'/);evt=`Fuser Exit BREAK @ ${tm?parseFloat(tm[1]).toFixed(3):'?'}s`;color='#7f8c8d';icon='🔥';}
+    if(l.includes('Image-Position Error')){const er=l.match(/(-?[\d.]+)\s*mm/);evt=`Image Position Error: ${er?er[1]:'?'}mm`;color='var(--xr-light)';icon='📐';}
+    if(l.includes('Pick to Input Make')){const tm=l.match(/^([\d.]+)/);evt=`Pick→Input Make @ ${tm?parseFloat(tm[1]).toFixed(3):'?'}s`;color='#16a085';icon='📏';}
+    if(l.includes('<SIDE_INFO')&&l.includes('PageEnd')){evt='Page Complete (PageEnd)';color='var(--green)';icon='✅';}
+    if(l.includes('<ALARM')){const cd=l.match(/AlarmCode='(\d+)'/);evt=`⚠ ALARM ${cd?cd[1]:'?'}`;color='var(--xr)';icon='🚨';}
+    if(l.includes('<SIDE_INFO')&&l.includes('PageStart')){evt='Page Start';color='var(--blue)';icon='▶️';}
+    if(l.includes('<TRANSFER_SERVO')){const tp=l.match(/ServoType='(\w+)'/);evt=`Transfer Servo: ${tp?tp[1]:'?'}`;color='var(--purple)';icon='🔌';}
+    if(!evt)continue;
+    flowHtml+=`<div class="flow-step"><div class="step-dot" style="background:${color};"></div><div class="step-info"><strong>${icon} ${evt}</strong><br><span style="color:var(--txt3);font-size:9px;">${escHtml(l).substring(0,120)}</span></div></div>`;
+  }
+  const modalHtml=`
+    <div style="margin-bottom:14px;">
+      <strong style="font-size:16px;color:var(--xr);">📦 Job: Page ID ${job.pageId}</strong>
+      <div class="kv-grid" style="margin-top:8px;">
+        <div class="kv-item"><div class="k">Media</div><div class="v">${job.media||'?'}</div></div>
+        <div class="kv-item"><div class="k">Tray</div><div class="v">${job.tray||'?'}</div></div>
+        <div class="kv-item"><div class="k">Speed</div><div class="v">${job.speed||'?'}</div></div>
+        <div class="kv-item"><div class="k">Color</div><div class="v">${job.colorMode||'?'}</div></div>
+        <div class="kv-item"><div class="k">Type</div><div class="v">${job.duplex||'?'}</div></div>
+        <div class="kv-item"><div class="k">SideCounts</div><div class="v">${job.startSide||'?'} → ${job.endSide||'?'}</div></div>
+        <div class="kv-item"><div class="k">Line Range</div><div class="v">${job.startLine}–${job.endLine} (${job.endLine-job.startLine} lines)</div></div>
+      </div>
+    </div>
+    <div class="section-hd" style="border-radius:var(--rs) var(--rs) 0 0;">📋 Full Job Flow (${(flowHtml.match(/flow-step/g)||[]).length} events)</div>
+    <div style="max-height:50vh;overflow-y:auto;padding:8px;">${flowHtml||'<div style="padding:12px;color:var(--txt3);">No detailed flow events found in this range.</div>'}</div>
+  `;
+  showGenericModal(`📦 Job Details: Page ID ${job.pageId}`,modalHtml);
+}
+
+function showGenericModal(title,body){
+  const overlay=document.createElement('div');overlay.className='modal-overlay show';
+  overlay.innerHTML=`<div class="modal"><div class="modal-header"><span>${title}</span><button class="modal-close">&times;</button></div><div class="modal-body">${body}</div></div>`;
+  overlay.querySelector('.modal-close').onclick=()=>overlay.remove();
+  overlay.addEventListener('click',e=>{if(e.target===overlay)overlay.remove();});
+  document.body.appendChild(overlay);
+  document.addEventListener('keydown',function esc(e){if(e.key==='Escape'){overlay.remove();document.removeEventListener('keydown',esc);}});
+}
+
+// ── SEQUENCE EXTRACTION (address/opcode pairs from log) ──
+function extractSequence(lines){
+  const seq=[];
+  lines.forEach((line,i)=>{
+    const tm=line.match(/^\s*([\d.]+)/);const t=tm?parseFloat(tm[1]):null;
+    const addr=line.match(/(?:Addr|Address|Dev)[\s:=]*(0x[0-9A-Fa-f]{2})/i);
+    const op=line.match(/(?:Op|OpCode|CMD)[\s:=]*(0x[0-9A-Fa-f]{2})/i);
+    if(addr||op)seq.push({time:t,addr:addr?addr[1]:null,op:op?op[1]:null,line:i,raw:line});
+  });
+  return seq;
+}
+
+function buildSequenceView(){
+  const el=document.getElementById('sequenceView');if(!el)return;
+  if(!globalSeq||globalSeq.length===0){
+    el.innerHTML='<div style="font-size:11px;color:var(--txt3);">No address/opcode pairs found in log. Sequence extraction needs lines like "Addr: 0x80 Op: 0x83 ..."</div>';
+    return;
+  }
+  let rows='';globalSeq.forEach((s,i)=>{rows+=`<tr><td>${i+1}</td><td class="mono">${s.time??'—'}</td><td class="mono"><span class="bi">${s.addr||'—'}</span></td><td class="mono" style="font-weight:700;color:var(--xr);">${s.op||'—'}</td><td style="font-size:10px;">${escHtml(s.raw).substring(0,100)}</td></tr>`;});
+  el.innerHTML=`<table class="data-table"><thead><tr><th>#</th><th>Time</th><th>Address</th><th>Opcode</th><th>Raw</th></tr></thead><tbody>${rows}</tbody></table>`;
+
+  // Device list
+  const devs=new Map();
+  globalSeq.forEach(s=>{if(s.addr){if(!devs.has(s.addr))devs.set(s.addr,{count:0,ops:new Set()});const d=devs.get(s.addr);d.count++;if(s.op)d.ops.add(s.op);}});
+  const dl=document.getElementById('deviceList');
+  if(devs.size===0){dl.innerHTML='<div style="font-size:11px;color:var(--txt3);">No device addresses detected.</div>';return;}
+  let r='';devs.forEach((v,k)=>{r+=`<tr><td class="mono" style="font-weight:700;color:var(--xr);">${k}</td><td>${trunkName(k)}</td><td class="mono">${v.count}</td><td class="mono" style="font-size:9px;">${[...v.ops].slice(0,10).join(', ')}</td></tr>`;});
+  dl.innerHTML=`<table class="data-table"><thead><tr><th>Address</th><th>Trunk Line</th><th>Events</th><th>Opcodes</th></tr></thead><tbody>${r}</tbody></table>`;
+}
+
+function trunkName(addr){
+  const m={0x00:'Top Attached',0x01:'Bottom Attached',0x02:'Front Attached',0x03:'Rear Attached',0x04:'Left Side Attached',0x05:'Right Side Attached',0x7F:'Broadcast',0xFE:'Link Reset',0xFF:'Reserved'};
+  const v=parseInt(addr,16);
+  if(m[v])return m[v];
+  if(v>=0x80&&v<=0xC0)return 'Slave Device';
+  return 'Reserved';
+}
+
+// ── TIMELINE — 7 enhanced graphs ──
+function buildTimeline(){
+  const chartEl=document.getElementById('timelineChart');
+  const sumEl=document.getElementById('timelineSummary');
+  if(!chartEl)return;
+
+  const getTimestamp=(line)=>{
+    let tm=line.match(/^\s*([\d.]+)/);if(tm)return parseFloat(tm[1]);
+    tm=line.match(/EngineTime='\s*([\d.]+)/);if(tm)return parseFloat(tm[1]);
+    tm=line.match(/(?:Timestamp|Time)='\s*([\d.]+)/);if(tm)return parseFloat(tm[1]);
+    return null;
+  };
+
+  const allPicks=[],allGaps=[],allSPS=[],allAlarms=[],allPPath=[],allBLDC=[],allJams=[];
+  if(rawLines&&rawLines.length>0){
+    rawLines.forEach((line,i)=>{
+      const t=getTimestamp(line);
+      const pm=line.match(/^\s*([\d.]+).*PickPage/);
+      if(pm){const pt=parseFloat(pm[1]);if(!isNaN(pt))allPicks.push({time:pt,line:i});}
+      if(/QDMG/i.test(line)){const h=line.match(/0x[0-9A-Fa-f]{8}/);let qt=t;if(!qt){const m2=line.match(/([\d.]+)/);if(m2)qt=parseFloat(m2[1]);}if(h&&qt!=null){const v=parseInt(h[0],16);allGaps.push({time:qt,hex:h[0],gap:((v>>16)&255)<<8|((v>>8)&255),raw:v});}}
+      if(/SPS/i.test(line)){const h=line.match(/0x[0-9A-Fa-f]{8}/);if(h&&t!=null){const v=parseInt(h[0],16),sr=((v>>16)&255)<<8|((v>>8)&255);allSPS.push({time:t,speedRaw:sr,speedLinear:sr/16});}}
+      if(line.includes('<ALARM')){const cd=line.match(/AlarmCode='(\d+)'/),msg=line.match(/AlarmMessage='([^']+)'/);if(t!=null)allAlarms.push({time:t,code:cd?cd[1]:'?',message:msg?msg[1]:line});}
+      if(line.includes('<PAPER_PATH')){
+        const sid=line.match(/PrinterSideCount='(\d+)'/),keys={};
+        const kvRe=/(\w+)='([^']*)'/g;let m;
+        while((m=kvRe.exec(line))!==null)keys[m[1]]=m[2];
+        let pt=t;
+        if(!pt){for(const k of['PickCommandTimeStamp','S1AltSensorMakeTimestamp','S2BumpExitSensorMakeTimestamp','FuserExitSensorMakeTimestamp','S1AltSensorBreakTimestamp','S2BumpExitSensorBreakTimestamp']){if(keys[k]){pt=parseFloat(keys[k]);break;}}}
+        allPPath.push({time:pt,sideCount:sid?parseInt(sid[1]):null,keys,line:i});
+      }
+      if(line.includes('<BLDC_MONITOR')||line.includes('<BLDC_HEALTH_CHECK')){const mt=line.match(/MotorId='(\w+)'/),bh=line.match(/Behavior='([^']+)'/),ev=line.match(/Event='(\w+)'/);allBLDC.push({time:t,motor:mt?mt[1]:'?',behavior:bh?bh[1]:'?',event:ev?ev[1]:'?'});}
+      if(line.includes('PAGE_CANCELLED_NFY')||line.includes('PAPER_JAM')||/[Jj]am\s*[:=]|JAM_CAUSE|Jam_Cause/i.test(line)){const pg=line.match(/0x([0-9A-Fa-f]{2})\s*0x/);allJams.push({time:t,pageId:pg?pg[1]:null,reason:'Jam/Cancel',line:i});}
+    });
+  }
+
+  if(allPicks.length===0&&allPPath.length===0){
+    chartEl.innerHTML=`<div class="empty-state"><div class="ei">📈</div><div style="font-size:14px;font-weight:700;">No timed events extracted</div><div style="font-size:11px;color:var(--txt3);">Scanned ${rawLines?rawLines.length:0} lines · Found ${allPicks.length} picks, ${allGaps.length} gaps, ${allSPS.length} SPS, ${allAlarms.length} alarms, ${allPPath.length} paths, ${allBLDC.length} motors, ${allJams.length} jams</div><div style="font-size:11px;margin-top:8px;">Make sure you ran <strong>Analyze</strong> first.</div></div>`;
+    if(sumEl)sumEl.innerHTML='<div style="font-size:11px;color:var(--txt3);">No data.</div>';
+    return;
+  }
+
+  const svgNS='http://www.w3.org/2000/svg';
+  const makeSVG=(w,h,body)=>
+    `<div style="overflow-x:auto;width:100%;"><svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="${svgNS}" style="display:block;min-width:700px;">
+      <rect width="${w}" height="${h}" fill="#FFFFFF" rx="6"/>${body}</svg></div>`;
+
+  // ── GRAPH 1: Event Timeline (with device address column) ──
+  let events=[];
+  allPicks.forEach(p=>events.push({time:p.time,type:'PickPage',color:'#DA291C',label:'Pick',shape:'circle'}));
+  allAlarms.forEach(a=>{if(a.time)events.push({time:a.time,type:'ALARM',color:'#A61F14',label:'🚨'+a.code,shape:'diamond'});});
+  allPPath.forEach(pp=>{if(pp.time&&pp.keys['PickCommandTimeStamp'])events.push({time:pp.time,type:'PickCmd',color:'#D97706',label:'PickCmd',shape:'triangle'});});
+  allPPath.forEach(pp=>{if(pp.time&&pp.keys['S1AltSensorMakeTimestamp'])events.push({time:pp.time,type:'S1Make',color:'#1E6FBA',label:'S1▲',shape:'circle'});});
+  allPPath.forEach(pp=>{if(pp.time&&pp.keys['S2BumpExitSensorMakeTimestamp'])events.push({time:pp.time,type:'BumpMake',color:'#1E8A54',label:'Bump▲',shape:'circle'});});
+  allPPath.forEach(pp=>{if(pp.time&&pp.keys['FuserExitSensorMakeTimestamp'])events.push({time:pp.time,type:'FuserMake',color:'#7C3AED',label:'Fuser▲',shape:'circle'});});
+  allPPath.forEach(pp=>{if(pp.time&&pp.keys['S1AltSensorBreakTimestamp'])events.push({time:pp.time,type:'S1Break',color:'#95A5A6',label:'S1▼',shape:'circle'});});
+  allPPath.forEach(pp=>{if(pp.time&&pp.keys['S2BumpExitSensorBreakTimestamp'])events.push({time:pp.time,type:'BumpBreak',color:'#95A5A6',label:'Bump▼',shape:'circle'});});
+  allBLDC.forEach(bm=>{if(bm.time&&bm.event==='Start')events.push({time:bm.time,type:'MotorStart',color:'#16A085',label:bm.motor,shape:'rect'});});
+  allBLDC.forEach(bm=>{if(bm.time&&bm.event==='Stop')events.push({time:bm.time,type:'MotorStop',color:'#DA291C',label:bm.motor,shape:'rect'});});
+  allJams.forEach(j=>{if(j.time!=null)events.push({time:j.time,type:'JAM',color:'#A61F14',label:'🛑JAM',shape:'diamond'});});
+
+  const buildEventSVG=()=>{
+    if(events.length===0)return'<div style="padding:14px;font-size:11px;color:var(--txt3);">No timed events.</div>';
+    events.sort((a,b)=>a.time-b.time);
+    const tMin=events[0].time,tMax=events[events.length-1].time,tR=tMax-tMin||1;
+    const w=Math.max(900,events.length*20),h=250,pl=90,pr=25,pt=30,pb=40,cw=w-pl-pr,ch=h-pt-pb;
+    const rows=['PickPage','Alarm','PickCmd','S1▲','Bump▲','Fuser▲','S1▼','Bump▼','Motor▶','Motor■','🛑JAM'];
+    const trMap={'PickPage':0,'ALARM':1,'PickCmd':2,'S1Make':3,'BumpMake':4,'FuserMake':5,'S1Break':6,'BumpBreak':7,'MotorStart':8,'MotorStop':9,'JAM':10};
+    const nRows=rows.length;
+    let body=`<text x="14" y="${h/2}" fill="#999" font-size="9" text-anchor="middle" transform="rotate(-90,14,${h/2})" font-weight="700">Events</text>`;
+    for(let r=0;r<nRows;r++){
+      const y=pt+r*(ch/(nRows-1));
+      body+=`<line x1="${pl}" y1="${y}" x2="${w-pr}" y2="${y}" stroke="#F0E8E8" stroke-width="1" stroke-dasharray="3,3"/>`;
+      body+=`<text x="${pl-6}" y="${y+3}" fill="#666" font-size="8" text-anchor="end" font-weight="600">${rows[r]}</text>`;
+    }
+    body+=`<line x1="${pl}" y1="${h-pb}" x2="${w-pr}" y2="${h-pb}" stroke="#CCC" stroke-width="1"/>`;
+    const ticks=6;
+    for(let i=0;i<=ticks;i++){
+      const x=pl+(i/ticks)*cw;
+      const tv=tMin+(i/ticks)*tR;
+      body+=`<line x1="${x}" y1="${h-pb}" x2="${x}" y2="${h-pb+5}" stroke="#CCC" stroke-width="1"/>`;
+      body+=`<text x="${x}" y="${h-pb+15}" fill="#888" font-size="9" text-anchor="middle">${tv.toFixed(2)}s</text>`;
+    }
+    events.forEach(e=>{
+      const x=pl+((e.time-tMin)/tR)*cw;
+      const y=pt+(trMap[e.type]||0)*(ch/(nRows-1));
+      let sz=e.type==='ALARM'?10:7;
+      let el='';
+      if(e.shape==='diamond'){const s=sz*1.4;el=`<polygon points="${x},${y-s} ${x+s},${y} ${x},${y+s} ${x-s},${y}" fill="${e.color}" stroke="#fff" stroke-width="1"/>`;}
+      else if(e.shape==='triangle'){const s=sz*1.3;el=`<polygon points="${x},${y-s} ${x+s},${y+s*.6} ${x-s},${y+s*.6}" fill="${e.color}" stroke="#fff" stroke-width="1"/>`;}
+      else if(e.shape==='rect'){const s=sz*.8;el=`<rect x="${x-s}" y="${y-s}" width="${s*2}" height="${s*2}" fill="${e.color}" stroke="#fff" stroke-width="1" rx="2"/>`;}
+      else{el=`<circle cx="${x}" cy="${y}" r="${sz}" fill="${e.color}" stroke="#fff" stroke-width="1"/>`;}
+      if(e.type.includes('Break'))el=el.replace(e.color,'#BDC3C7');
+      el+=`<title>${e.type}: ${e.label} @ ${e.time.toFixed(3)}s</title>`;
+      body+=el;
+    });
+    return makeSVG(w,h,body);
+  };
+
+  // ── GRAPH 2: Sensor State Timeline (NEW) ──
+  const buildSensorSVG=()=>{
+    const sensors=[
+      {name:'S1 (Infeed)', key:'S1AltSensorMakeTimestamp', breakKey:'S1AltSensorBreakTimestamp', color:'#1E6FBA'},
+      {name:'Bump Exit', key:'S2BumpExitSensorMakeTimestamp', breakKey:'S2BumpExitSensorBreakTimestamp', color:'#1E8A54'},
+      {name:'Fuser Exit', key:'FuserExitSensorMakeTimestamp', breakKey:'FuserExitSensorBreakTimestamp', color:'#7C3AED'},
+      {name:'PickCmd', key:'PickCommandTimeStamp', breakKey:null, color:'#D97706'}
+    ];
+    const trans=[];
+    allPPath.forEach(pp=>{
+      sensors.forEach(s=>{
+        if(pp.keys[s.key]){trans.push({time:parseFloat(pp.keys[s.key]),sensor:s.name,state:1,color:s.color});}
+        if(s.breakKey&&pp.keys[s.breakKey]){trans.push({time:parseFloat(pp.keys[s.breakKey]),sensor:s.name,state:0,color:s.color});}
+      });
+    });
+    if(trans.length===0)return'<div style="padding:14px;font-size:11px;color:var(--txt3);">No sensor transitions found. Try enabling PAPER_PATH filter and re-analyzing.</div>';
+    trans.sort((a,b)=>a.time-b.time);
+    const tMin=trans[0].time,tMax=trans[trans.length-1].time,tR=tMax-tMin||1;
+    const sensorNames=[...new Set(trans.map(t=>t.sensor))];
+    const w=Math.max(900,trans.length*12),h=80+sensorNames.length*36,pl=110,pr=25,pt=25,pb=30,cw=w-pl-pr;
+    let body='';
+    const yAxis=`<text x="14" y="${h/2}" fill="#999" font-size="9" text-anchor="middle" transform="rotate(-90,14,${h/2})" font-weight="700">Sensors</text>`;
+    body+=yAxis;
+    sensorNames.forEach((sn,idx)=>{
+      const y=pt+idx*36;
+      body+=`<text x="${pl-6}" y="${y+18}" fill="#333" font-size="10" text-anchor="end" font-weight="700">${sn}</text>`;
+      body+=`<line x1="${pl}" y1="${y+20}" x2="${w-pr}" y2="${y+20}" stroke="#EEE" stroke-width="1"/>`;
+      const snTrans=trans.filter(t=>t.sensor===sn);
+      for(let i=0;i<snTrans.length;i++){
+        const t0=snTrans[i].time;
+        const t1=(i+1<snTrans.length)?snTrans[i+1].time:tMax;
+        const x0=pl+((t0-tMin)/tR)*cw,x1=pl+((t1-tMin)/tR)*cw;
+        const yHigh=y+8,yLow=y+22;
+        const yV=snTrans[i].state===1?yHigh:yLow;
+        body+=`<line x1="${x0}" y1="${yV}" x2="${x1}" y2="${yV}" stroke="${snTrans[i].color}" stroke-width="3" stroke-linecap="round"/>`;
+        if(i>0){
+          const yPrev=snTrans[i-1].state===1?yHigh:yLow;
+          body+=`<line x1="${x0}" y1="${yPrev}" x2="${x0}" y2="${yV}" stroke="${snTrans[i].color}" stroke-width="1.5" stroke-dasharray="2,1"/>`;
+        }
+        body+=`<circle cx="${x0}" cy="${yV}" r="3" fill="${snTrans[i].color}" stroke="#fff" stroke-width="1"><title>${sn} ${snTrans[i].state?'MAKE':'BREAK'} @ ${t0.toFixed(3)}s</title></circle>`;
+      }
+    });
+    body+=`<line x1="${pl}" y1="${h-pb}" x2="${w-pr}" y2="${h-pb}" stroke="#CCC" stroke-width="1"/>`;
+    for(let i=0;i<=6;i++){
+      const x=pl+(i/6)*cw;
+      body+=`<text x="${x}" y="${h-pb+15}" fill="#888" font-size="9" text-anchor="middle">${(tMin+(i/6)*tR).toFixed(2)}s</text>`;
+    }
+    return makeSVG(w,h,body);
+  };
+
+  // ── GRAPH 3: Speed Profile (step function) ──
+  const spdPts=allSPS.filter(s=>s.time!=null).sort((a,b)=>a.time-b.time);
+  let speedSVG='<div style="padding:14px;font-size:11px;color:var(--txt3);">No SPS speed data found.</div>';
+  if(spdPts.length>=1){
+    const tMin=spdPts[0].time,tMax=spdPts[spdPts.length-1].time,tR=tMax-tMin||1;
+    const vAll=spdPts.map(p=>p.speedLinear),vMin=0,vMax=Math.max(...vAll)*1.15||1;
+    const w=Math.max(800,spdPts.length*25),h=180,pl=65,pr=20,pt=22,pb=35,cw=w-pl-pr,ch=h-pt-pb;
+    let body='';
+    for(let i=0;i<=4;i++){const y=pt+(i/4)*ch;body+=`<line x1="${pl}" y1="${y}" x2="${w-pr}" y2="${y}" stroke="#F0E8E8" stroke-width="1" stroke-dasharray="3,3"/>`;}
+    body+=`<line x1="${pl}" y1="${h-pb}" x2="${w-pr}" y2="${h-pb}" stroke="#CCC" stroke-width="1"/>`;
+    let prevY=null,prevX=null;
+    spdPts.forEach((p,i)=>{
+      const cx=pl+((p.time-tMin)/tR)*cw,cy=pt+ch-((p.speedLinear-vMin)/vMax)*ch;
+      if(i>0){
+        body+=`<line x1="${prevX}" y1="${prevY}" x2="${cx}" y2="${prevY}" stroke="#DA291C" stroke-width="2.5"/>`;
+        body+=`<line x1="${cx}" y1="${prevY}" x2="${cx}" y2="${cy}" stroke="#DA291C" stroke-width="2.5" stroke-dasharray="3,2"/>`;
+      }
+      body+=`<circle cx="${cx}" cy="${cy}" r="5" fill="#fff" stroke="#DA291C" stroke-width="2"><title>${p.speedLinear.toFixed(2)} mm/s @ ${p.time.toFixed(3)}s</title></circle>`;
+      body+=`<text x="${cx}" y="${cy-9}" fill="#DA291C" font-size="9" text-anchor="middle" font-weight="700">${p.speedLinear.toFixed(0)}</text>`;
+      prevX=cx;prevY=cy;
+    });
+    for(let i=0;i<=6;i++){const x=pl+(i/6)*cw;body+=`<text x="${x}" y="${h-pb+14}" fill="#888" font-size="9" text-anchor="middle">${(tMin+(i/6)*tR).toFixed(2)}s</text>`;}
+    body+=`<text x="${pl-4}" y="${pt+4}" fill="#888" font-size="9" text-anchor="end">${vMax.toFixed(0)}</text>`;
+    body+=`<text x="${pl-4}" y="${pt+ch}" fill="#888" font-size="9" text-anchor="end">0</text>`;
+    body+=`<text x="14" y="${h/2}" fill="#999" font-size="9" text-anchor="middle" transform="rotate(-90,14,${h/2})" font-weight="700">mm/s</text>`;
+    speedSVG=makeSVG(w,h,body);
+  }
+
+  // ── GRAPH 4: QDMG Gap ──
+  const gapPts=allGaps.filter(g=>g.time!=null).sort((a,b)=>a.time-b.time);
+  let gapSVG='<div style="padding:14px;font-size:11px;color:var(--txt3);">No QDMG gap data found.</div>';
+  if(gapPts.length>=1){
+    const tMin=gapPts[0].time,tMax=gapPts[gapPts.length-1].time,tR=tMax-tMin||1;
+    const vAll=gapPts.map(p=>p.gap),vMax=Math.max(...vAll)*1.2||1;
+    const w=Math.max(800,gapPts.length*25),h=180,pl=65,pr=20,pt=22,pb=35,cw=w-pl-pr,ch=h-pt-pb;
+    let body='';
+    for(let i=0;i<=4;i++){const y=pt+(i/4)*ch;body+=`<line x1="${pl}" y1="${y}" x2="${w-pr}" y2="${y}" stroke="#F0E8E8" stroke-width="1" stroke-dasharray="3,3"/>`;}
+    body+=`<line x1="${pl}" y1="${h-pb}" x2="${w-pr}" y2="${h-pb}" stroke="#CCC" stroke-width="1"/>`;
+    gapPts.forEach((p,i)=>{
+      const cx=pl+((p.time-tMin)/tR)*cw,cy=pt+ch-(p.gap/vMax)*ch;
+      if(i>0){
+        const px=pl+((gapPts[i-1].time-tMin)/tR)*cw,py=pt+ch-(gapPts[i-1].gap/vMax)*ch;
+        body+=`<line x1="${px}" y1="${py}" x2="${cx}" y2="${cy}" stroke="#D97706" stroke-width="2.5" stroke-linecap="round"/>`;
+      }
+      body+=`<circle cx="${cx}" cy="${cy}" r="5" fill="#fff" stroke="#D97706" stroke-width="2"><title>Gap ${p.gap} @ ${p.time.toFixed(3)}s</title></circle>`;
+      body+=`<text x="${cx}" y="${cy-9}" fill="#D97706" font-size="9" text-anchor="middle" font-weight="700">${p.gap}</text>`;
+    });
+    for(let i=0;i<=6;i++){const x=pl+(i/6)*cw;body+=`<text x="${x}" y="${h-pb+14}" fill="#888" font-size="9" text-anchor="middle">${(tMin+(i/6)*tR).toFixed(2)}s</text>`;}
+    body+=`<text x="${pl-4}" y="${pt+4}" fill="#888" font-size="9" text-anchor="end">${vMax.toFixed(0)}</text>`;
+    body+=`<text x="${pl-4}" y="${pt+ch}" fill="#888" font-size="9" text-anchor="end">0</text>`;
+    body+=`<text x="14" y="${h/2}" fill="#999" font-size="9" text-anchor="middle" transform="rotate(-90,14,${h/2})" font-weight="700">enc</text>`;
+    gapSVG=makeSVG(w,h,body);
+  }
+
+  // ── GRAPH 5: Pick Interval Bars ──
+  let pickBarSVG='<div style="padding:14px;font-size:11px;color:var(--txt3);">Need 2+ picks.</div>';
+  if(allPicks.length>=2){
+    const deltas=[],labels=[],times=[];
+    for(let i=1;i<allPicks.length;i++){deltas.push(allPicks[i].time-allPicks[i-1].time);labels.push(`P${i}→${i+1}`);times.push(allPicks[i].time);}
+    const mx=Math.max(...deltas,.1);
+    const w=Math.max(800,deltas.length*50),h=200,pl=75,pr=20,pt=20,pb=40,cw=w-pl-pr,ch=h-pt-pb;
+    const bw=Math.max(10,(cw/deltas.length)-6);
+    let body='';
+    body+=`<line x1="${pl}" y1="${h-pb}" x2="${w-pr}" y2="${h-pb}" stroke="#CCC" stroke-width="1"/>`;
+    const y1_5=pt+ch-(1.5/mx)*ch,y10=pt+ch-(10/mx)*ch;
+    if(1.5<mx)body+=`<line x1="${pl}" y1="${y1_5}" x2="${w-pr}" y2="${y1_5}" stroke="#DA291C" stroke-width="1" stroke-dasharray="4,4"/><text x="${w-pr+2}" y="${y1_5+3}" fill="#DA291C" font-size="8" font-weight="700">1.5s</text>`;
+    if(10<mx)body+=`<line x1="${pl}" y1="${y10}" x2="${w-pr}" y2="${y10}" stroke="#D97706" stroke-width="1" stroke-dasharray="4,4"/><text x="${w-pr+2}" y="${y10+3}" fill="#D97706" font-size="8" font-weight="700">10s</text>`;
+    deltas.forEach((d,i)=>{
+      const bh=Math.max(2,(d/mx)*ch);
+      const x=pl+i*(bw+6)+3,y=pt+ch-bh;
+      let fill='#1E8A54';if(d<1.5)fill='#DA291C';else if(d>10)fill='#D97706';
+      body+=`<rect x="${x}" y="${y}" width="${bw}" height="${bh}" fill="${fill}" rx="3" opacity=".85"><title>${labels[i]}: ${d.toFixed(3)}s @ ${times[i].toFixed(3)}s</title></rect>`;
+      body+=`<text x="${x+bw/2}" y="${y-4}" fill="#333" font-size="8" text-anchor="middle" font-weight="700">${d.toFixed(2)}</text>`;
+      body+=`<text x="${x+bw/2}" y="${h-pb+12}" fill="#888" font-size="7" text-anchor="middle" transform="rotate(-35,${x+bw/2},${h-pb+12})">${times[i].toFixed(1)}s</text>`;
+    });
+    body+=`<text x="14" y="${h/2}" fill="#999" font-size="9" text-anchor="middle" transform="rotate(-90,14,${h/2})" font-weight="700">seconds</text>`;
+    pickBarSVG=makeSVG(w,h,body);
+  }
+
+  // ── GRAPH 6: Motor Activity Timeline (NEW) ──
+  let motorSVG='<div style="padding:14px;font-size:11px;color:var(--txt3);">No BLDC motor events found.</div>';
+  if(allBLDC.length>=2){
+    const motors=[...new Set(allBLDC.map(b=>b.motor))];
+    const w=Math.max(900,motors.length*60),h=60+motors.length*40,pl=110,pr=25,pt=25,pb=30,cw=w-pl-pr;
+    const tAll=allBLDC.filter(b=>b.time!=null).map(b=>b.time);
+    if(tAll.length>0){
+      const tMin=Math.min(...tAll),tMax=Math.max(...tAll),tR=tMax-tMin||1;
+      let body=`<text x="14" y="${h/2}" fill="#999" font-size="9" text-anchor="middle" transform="rotate(-90,14,${h/2})" font-weight="700">Motors</text>`;
+      motors.forEach((m,idx)=>{
+        const y=pt+idx*40;
+        body+=`<text x="${pl-6}" y="${y+20}" fill="#333" font-size="10" text-anchor="end" font-weight="700">${m}</text>`;
+        body+=`<line x1="${pl}" y1="${y+20}" x2="${w-pr}" y2="${y+20}" stroke="#EEE" stroke-width="1"/>`;
+        const evts=allBLDC.filter(b=>b.motor===m&&b.time!=null).sort((a,b)=>a.time-b.time);
+        let startT=null;
+        evts.forEach(e=>{
+          if(e.event==='Start')startT=e.time;
+          else if(e.event==='Stop'&&startT!=null){
+            const x0=pl+((startT-tMin)/tR)*cw,x1=pl+((e.time-tMin)/tR)*cw;
+            body+=`<rect x="${x0}" y="${y+12}" width="${x1-x0}" height="16" fill="#1E8A54" opacity=".7" rx="3"><title>${m} ON: ${startT.toFixed(3)}s → ${e.time.toFixed(3)}s (${(e.time-startT).toFixed(3)}s)</title></rect>`;
+            startT=null;
+          }
+        });
+        if(startT!=null){
+          const x0=pl+((startT-tMin)/tR)*cw,x1=w-pr;
+          body+=`<rect x="${x0}" y="${y+12}" width="${x1-x0}" height="16" fill="#D97706" opacity=".6" rx="3"><title>${m} ON: ${startT.toFixed(3)}s → end (running)</title></rect>`;
+        }
+      });
+      body+=`<line x1="${pl}" y1="${h-pb}" x2="${w-pr}" y2="${h-pb}" stroke="#CCC" stroke-width="1"/>`;
+      for(let i=0;i<=6;i++){const x=pl+(i/6)*cw;body+=`<text x="${x}" y="${h-pb+15}" fill="#888" font-size="9" text-anchor="middle">${(tMin+(i/6)*tR).toFixed(2)}s</text>`;}
+      motorSVG=makeSVG(w,h,body);
+    }
+  }
+
+  // ── Assemble ──
+  chartEl.innerHTML=`
+    <style>
+      .graph-wrap{background:#fff;border:1px solid var(--border);border-radius:var(--rs);margin:10px;overflow:hidden;}
+      .graph-wrap .gw-hd{padding:10px 14px;font-weight:800;font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:var(--xr);border-bottom:1px solid var(--border);background:linear-gradient(180deg,#fff,#FFF5F5);}
+      .graph-wrap .gw-bd{padding:8px 4px;overflow-x:auto;}
+    </style>
+    <div class="graph-wrap"><div class="gw-hd">📈 Event Timeline — PickPage · Sensors · Alarms · Motors · JAMs</div><div class="gw-bd">${buildEventSVG()}</div></div>
+    <div class="graph-wrap"><div class="gw-hd">🚦 Sensor State Timeline — MAKE/BREAK Transitions</div><div class="gw-bd">${buildSensorSVG()}</div></div>
+    <div class="graph-wrap"><div class="gw-hd">⚡ Process Speed Profile — SPS Linear Speed (step function)</div><div class="gw-bd">${speedSVG}</div></div>
+    <div class="graph-wrap"><div class="gw-hd">📏 QDMG Minimum Interpage Gap</div><div class="gw-bd">${gapSVG}</div></div>
+    <div class="graph-wrap"><div class="gw-hd">⏱️ Pick Interval Distribution</div><div class="gw-bd">${pickBarSVG}</div></div>
+    <div class="graph-wrap"><div class="gw-hd">🔧 Motor Activity Timeline — BLDC On/Off</div><div class="gw-bd">${motorSVG}</div></div>`;
+
+  const evSorted=events.length>0?[...events].sort((a,b)=>a.time-b.time):[];
+  const tMin=evSorted.length>0?evSorted[0].time:0,tMax=evSorted.length>0?evSorted[evSorted.length-1].time:0;
+  if(sumEl)sumEl.innerHTML=`
+    <div class="kv-grid">
+      <div class="kv-item"><div class="k">Time Range</div><div class="v">${tMin.toFixed(3)} → ${tMax.toFixed(3)}s (${(tMax-tMin).toFixed(3)}s)</div></div>
+      <div class="kv-item"><div class="k">Total Events</div><div class="v">${events.length}</div></div>
+      <div class="kv-item"><div class="k">PickPage</div><div class="v">${allPicks.length}</div></div>
+      <div class="kv-item"><div class="k">Alarms</div><div class="v" style="color:var(--xr);">${allAlarms.length}</div></div>
+      <div class="kv-item"><div class="k">Sensor Events</div><div class="v">${allPPath.length}</div></div>
+      <div class="kv-item"><div class="k">Motor Events</div><div class="v">${allBLDC.filter(b=>b.event==='Start'||b.event==='Stop').length}</div></div>
+      <div class="kv-item"><div class="k">Speed Points</div><div class="v">${spdPts.length}</div></div>
+      <div class="kv-item"><div class="k">Gap Points</div><div class="v">${gapPts.length}</div></div>
+      <div class="kv-item"><div class="k">JAMs</div><div class="v" style="color:var(--xr);">${allJams.length}</div></div>
+    </div>`;
+}
+
+// ── DECODERS ──
+function decodeSLPQRoute(route){
+  const m={1:'Simplex',2:'Duplex',3:'Finisher',4:'Bin0',5:'Bin1',11:'TopLeft',12:'TopDual',13:'LeftDual',14:'TopRight',15:'LandscapeDualTop',16:'LandscapeDualLeft'};
+  return m[route]||`Route ${route}`;
+}
+function ptcToSpeed(ptcRaw){return ptcRaw*0.0625;}
+function decodeSPSRaw(v){return ((v>>16)&255)<<8|((v>>8)&255);}
+
+function decodeHex(hex,line){
+  const v=parseInt(hex,16),b1=(v>>>24)&255,b2=(v>>16)&255,b3=(v>>8)&255,b4=v&255;
+  let text=`╔══════════════════════╗
+║  HEX DEEP DECODE     ║
+╚══════════════════════╝
+
+📌 ${hex} = ${v>>>0} dec
+
+┌─ Bytes ───────────────────┐
+│ B1=${toHex(b1)} (${String(b1).padStart(3)})  B2=${toHex(b2)} (${String(b2).padStart(3)})
+│ B3=${toHex(b3)} (${String(b3).padStart(3)})  B4=${toHex(b4)} (${String(b4).padStart(3)})
+│ B2:B3 u16=${(b2<<8)|b3}  B3:B4 u16=${(b3<<8)|b4}
+└────────────────────────────┘
+
+`;
+  if(line.includes('QDMG')){text+=`📏 QDMG Min Gap = (B2<<8)|B3 = ${(b2<<8)|b3} mm\n\n`;}
+  if(line.includes('SPS')){const sr=((b2)<<8)|b3;text+=`⚡ SPS Speed = ${sr}/16 = ${(sr/16).toFixed(3)} mm/s\n\n`;}
+  if(line.includes('SLPQ')){const subcmds={0:'Submit New',1:'Update Last',2:'Remove Last'};text+=`🗺️ SLPQ: SubCmd=${subcmds[b1&15]||b1}  Page=${b2}  BinDest=${b3}  TrayOffset=${b4}\n\n`;}
+  if(line.includes('DOC')){text+=`📄 DOC Command: N1=Op(${toHex(b1)})\n\n`;}
+  if(line.includes('PTC')){const spd=ptcToSpeed(v);text+=`⚙️ PTC Speed ≈ ${spd.toFixed(2)} mm/s\n\n`;}
+  if(line.includes('QDQ')){text+=`🔧 QDQ Device Quiesce = ${b3===0?'QUIESCED':b3===0x80?'NOT QUIESCED':'PROCESSING'}\n\n`;}
+  if(line.includes('QDT')){text+=`🔖 QDT Device Type = ${b4}\n   Tray ID = ${b3}\n\n`;}
+  if(line.includes('QDI')){text+=`📋 QDI Inventory\n   Capacity = ${b1}%\n   Media Size = ${toHex(b2)}\n   Flags = ${toHex(b3)}\n\n`;}
+  if(line.includes('QDM')){text+=`⚙️ QDM Debug = ${toHex(b4)}\n\n`;}
+  text+=`📝 Source: ${escHtml(line)}`;
+  const dp=document.getElementById('decodePanel');if(dp)dp.innerHTML=text.replace(/\n/g,'<br>');
+}
+
+function clearAll(){
+  const logEl=document.getElementById('logInput');if(logEl)logEl.value='';
+  const dp=document.getElementById('decodePanel');if(dp)dp.innerHTML='Click any <span style="color:var(--xr);font-weight:700;">0x...</span> to decode.';
+  const out=document.getElementById('output');if(out)out.innerHTML='<div class="empty-state"><div class="ei">📊</div><div style="font-size:15px;font-weight:700;">No Analysis Yet</div><div style="font-size:12px;">Load a log and click <strong>Analyze</strong>.</div></div>';
+  const tc=document.getElementById('timelineChart');if(tc)tc.innerHTML='<div class="empty-state"><div class="ei">📈</div><div>Run Analyzer first.</div></div>';
+  const ts=document.getElementById('timelineSummary');if(ts)ts.innerHTML='<div style="font-size:11px;color:var(--txt3);">Timeline details will appear after analysis.</div>';
+  const sv=document.getElementById('sequenceView');if(sv)sv.innerHTML='<div style="font-size:11px;color:var(--txt3);">Run the Analyzer first...</div>';
+  ['statPages','statGaps','statSLPQ','statAlarms','statJobs'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent='0';});
+  const sa=document.getElementById('statAvgDelta');if(sa)sa.textContent='—';
+  globalPicks=[];globalAlarms=[];globalSLPQ=[];globalPPath=[];globalBLDC=[];globalJobs=[];globalSPS=[];globalGaps=[];globalSeq=[];
+}
+
+// ── CONVERSION FUNCTIONS (fixed) ──
+function convPTCtoSpeed(){
+  const hex=document.getElementById('convPTC').value.trim();if(!hex)return;
+  const v=parseInt(hex,16);if(isNaN(v)){document.getElementById('convPTCResult').textContent='Invalid';return;}
+  const spd=ptcToSpeed(v);
+  document.getElementById('convPTCResult').textContent=`${spd.toFixed(2)} mm/s · ~${(spd/5.4).toFixed(1)} ppm`;
+}
+function convSPStoSpeed(){
+  const hex=document.getElementById('convSPS').value.trim();if(!hex)return;
+  const v=parseInt(hex,16);if(isNaN(v)){document.getElementById('convSPSResult').textContent='Invalid';return;}
+  // SPS: N2 = MSB (bits 23-16), N3 = LSB (bits 15-8) per spec §1.11.27
+  const sr=((v>>16)&0xFF)<<8|((v>>8)&0xFF);
+  document.getElementById('convSPSResult').textContent=`Raw=${sr} · Linear=${(sr/16).toFixed(3)} mm/s`;
+}
+function convQDMGtoDist(){
+  const hex=document.getElementById('convQDMG').value.trim();if(!hex)return;
+  const v=parseInt(hex,16);if(isNaN(v)){document.getElementById('convQDMGResult').textContent='Invalid';return;}
+  // QDMG: N1 = MSB (bits 23-16), N2 = LSB (bits 15-8)
+  const gap=((v>>16)&0xFF)<<8|((v>>8)&0xFF);
+  const notReady=gap===0xFFFF;
+  document.getElementById('convQDMGResult').textContent=notReady?`0xFFFF = Device Not Ready`:`Gap=${gap} mm`;
+}
+function convHexDec(){
+  const hex=document.getElementById('convHex').value.trim().replace(/^0x/i,'');if(!hex)return;
+  const v=parseInt(hex,16);
+  document.getElementById('convHexResult').textContent=isNaN(v)?'Invalid':`= ${v} dec`;
+}
+function convDecHex(){
+  const dec=parseInt(document.getElementById('convDec').value.trim());
+  document.getElementById('convDecResult').textContent=isNaN(dec)?'Invalid':`= 0x${dec.toString(16).toUpperCase()}`;
+}
+function convTimeDist(){
+  const speed=parseFloat(document.getElementById('convSpeed').value);
+  const time=parseFloat(document.getElementById('convTime').value);
+  const dist=parseFloat(document.getElementById('convDist').value);
+  if(!isNaN(speed)&&speed>0){
+    if(!isNaN(time))document.getElementById('convTDResult1').textContent=`→ ${(time*speed/1000).toFixed(3)} mm`;
+    if(!isNaN(dist))document.getElementById('convTDResult2').textContent=`→ ${(dist*1000/speed).toFixed(1)} ms`;
+  }
+}
+function convMediaLookup(){
+  const q=document.getElementById('convMedia').value.trim().toUpperCase();
+  const sizes={'LGL':'215.9×355.6mm','LTR':'215.9×279.4mm','A4':'210×297mm','A5':'148×210mm','B5':'182×257mm','A3':'297×420mm','B4':'257×364mm','EXEC':'184.2×266.7mm','FOLIO':'209.6×355.6mm','OFICIO':'215.9×355.6mm','DLT':'279.4×431.8mm','SRA3':'320×450mm','12×18':'304.8×457.2mm','A6':'105×148mm','B6':'128×182mm','STATEMENT':'139.7×215.9mm'};
+  const enums={'0X02':'A4','0X04':'LGL','0X06':'B5','0X08':'A5','0X0A':'EXEC','0X0C':'LTR','0X0E':'Custom','0X10':'Statement','0X11':'Folio','0X12':'A6','0X13':'Oficio','0X80':'Envelope','0X81':'#9 Env','0X82':'#10 Env','0X83':'DL Env','0X84':'C5 Env','0X85':'B5 Env'};
+  let out=sizes[q]||enums[q]||'';
+  document.getElementById('convMediaResult').textContent=out||(q?'Unknown size':'');
+}
+function convSLPQDecode(){
+  const hex=document.getElementById('convSLPQ').value.trim();if(!hex)return;
+  const v=parseInt(hex,16);if(isNaN(v)){document.getElementById('convSLPQResult').innerHTML='Invalid';return;}
+  const b1=(v>>>24)&255,b2=(v>>16)&255,b3=(v>>8)&255,b4=v&255;
+  const sub={0:'Submit New Page',1:'Update Last Page',2:'Remove Last Page'};
+  const staple={0:'No Staple',1:'TopLeft (Portrait Single)',2:'TopDual',3:'LeftDual',0x11:'TopRight (Landscape Single)',0x14:'TopLeft Diagonal',0x15:'TopRight Diagonal'};
+  const pos={0:'Default',1:'Left/Front',2:'Right/Rear'};
+  const acc={0:'Do NOT accumulate',1:'Accumulate'};
+  const hp={0:'No punch',1:'NA 3-hole',2:'ISO 2-hole',3:'US 2-hole',4:'ISO 4-hole'};
+  const fin={0:'No action',1:'Sheet will be flushed',2:'Sheet will be stapled',3:'Sheet will be primed'};
+  const fold={0:'No fold',1:'Bi-fold',2:'Booklet',3:'C-trifold',4:'Z-trifold',5:'Z-fold'};
+  document.getElementById('convSLPQResult').innerHTML=`
+    <strong>SubCmd (B1 low nibble):</strong> ${sub[b1&15]||(b1&15)}<br>
+    <strong>Staple (B1 high nibble):</strong> ${staple[(b1>>4)&15]||((b1>>4)&15)}<br>
+    <strong>Page ID (N2):</strong> ${b2} &nbsp;|&nbsp; <strong>Bin Destination (N3):</strong> ${b3}<br>
+    <strong>Tray Offset (N4):</strong> ${pos[b4]||b4}<br>
+    <strong>Hole Punch:</strong> ${hp[0]} &nbsp;|&nbsp; <strong>Finishing:</strong> ${fin[0]}<br>
+    <strong>Fold:</strong> ${fold[0]}`;
+}
+function convAddrDecode(){
+  const hex=document.getElementById('convAddr').value.trim();if(!hex)return;
+  const v=parseInt(hex,16);if(isNaN(v)){document.getElementById('convAddrResult').textContent='Invalid';return;}
+  const trunk={0x00:'Top Attached Devices',0x01:'Bottom Attached Devices',0x02:'Front Attached Devices',0x03:'Rear Attached Devices',0x04:'Left Side Attached Devices',0x05:'Right Side Attached Devices',0x7F:'BROADCAST ADDRESS',0xFE:'LINK RESET',0xFF:'Reserved'};
+  let out='';
+  if(trunk[v])out=trunk[v];
+  else if(v>=0x80&&v<=0xC0)out=`Slave Device #${v-0x7F}`;
+  else if(v>=0x06&&v<=0x7E)out='Reserved';
+  else if(v>=0xC1&&v<=0xFD)out='Reserved';
+  else out='Reserved';
+  document.getElementById('convAddrResult').textContent=out;
+}
+
+// ── OPCODE REFERENCE (per spec) ──
+(function initOpcodes(){
+  const ops=[
+    ['0x00','SCR','Synchronization','System Configuration Reset','No'],
+    ['0x01','HR','Synchronization','Hard Reset','No'],
+    ['0x02','SR','Synchronization','Soft Reset','No'],
+    ['0x03','QRC','Synchronization','Query Reset Complete','No'],
+    ['0x04','DCND','Synchronization','Disconnect Communications To Next Device','No'],
+    ['0x05','CCND','Synchronization','Connect Communications To Next Device','No'],
+    ['0x06','QDT','Configuration','Query Device Type','No'],
+    ['0x07','CFPQ','Misc','Cancel / Flush (Logical) Page Queue','No'],
+    ['0x08','QAPS','Status','Query Aux Power Status','No'],
+    ['0x09','QOC','Status','Query Operation Complete','Yes'],
+    ['0x0A','QDSR','Configuration','Query Device Software Revision','No'],
+    ['0x0B','QDS1','Status','Query Device Status 1 (non-echoing)','No'],
+    ['0x0C','QNCSC','Status','Query Non-Critical Status Change','No'],
+    ['0x0D','QIRCHA','Status','Query IR Condition – Homing Allowed','No'],
+    ['0x0E','QIRAIS','Status','Query IR Absolute Immediate Stop','No'],
+    ['0x0F','QNRWC','Misc','Query NVRAM Read/Write Complete','No'],
+    ['0x10','QEQCKS','Status','Query Equipment Check Status','No'],
+    ['0x11','QNT','Status','Query Number Trays','No'],
+    ['0x12','TRRD','Misc','Transmit Requested Read Data','No'],
+    ['0x13','QCOL','Status','Query Cover Open Location','No'],
+    ['0x14','QPCID','Status','Query Page Complete ID','No'],
+    ['0x15','IRC','Status','Intervention Required Clear Notification','No'],
+    ['0x16','QDM','Status','Query Debug Message','No'],
+    ['0x17','JOT','Steady State','Jog Output Tray','No'],
+    ['0x18','PP','Steady State','Pick Page','No'],
+    ['0x19','DMID','Steady State','Divert Media Into Device','No'],
+    ['0x1A','DCMN','Steady State','Device Controls Media Notification','No'],
+    ['0x1B','PISN','Steady State','Page At Printer Input Sensor Notification','No'],
+    ['0x1C','BCS','Status','Begin Communications Session (DELETED)','No'],
+    ['0x1D','ECS','Status','End Communications Session (DELETED)','No'],
+    ['0x1E','ILPS','Misc','Invoke Low Power State','No'],
+    ['0x1F','RFPS','Misc','Restore Full Power State','No'],
+    ['0x20','DMNID','Misc','Divert Media Not Into Device','No'],
+    ['0x21','QDTC','Diagnostics','Query Diagnostic Test Complete','No'],
+    ['0x22','MR','Synchronization','Mechanical Reset','No'],
+    ['0x23','PPASG','Steady State','Pick Page At Set Gap (DELETED)','No'],
+    ['0x24','SIG','Status','Set Interpage Gap (DELETED)','No'],
+    ['0x25','QDTDM','Diagnostics','Query Diagnostic Test Data Message','No'],
+    ['0x26','QDQ','Status','Query Device Quiesce','No'],
+    ['0x27','QTPL','Status','Query Tray Pulled Location','No'],
+    ['0x28','PR','Status','Pick Retry','No'],
+    ['0x29','QHWIR','Status','Query Hardware IR','No'],
+    ['0x2A','QDSMIN','Status','Query Device Minimum Speed','No'],
+    ['0x2B','QDSMAX','Status','Query Device Maximum Speed','No'],
+    ['0x2C','PEXSN','Status','Page At Printer Exit Sensor Notification','No'],
+    ['0x2D','QDBSR','Configuration','Query Device Boot Software Revision','No'],
+    ['0x2E','QDMIG','Status','Query Device Measured Interpage Gap','No'],
+    ['0x2F','QPTE','Status','Query Pick Time Error','No'],
+    ['0x40','QMSCS','Status','Query Media Sensor Calibration Status','No'],
+    ['0x80','ADA','Synchronization','Assign Device Address','Yes'],
+    ['0x81','PCN','Configuration','Printer Characteristics Notification','Yes'],
+    ['0x82','QDPT','Status','Query Device Pick Time','Yes'],
+    ['0x83','QDMG','Status','Query Device Minimum Interpage Gap','Yes'],
+    ['0x84','PIRN','Status','Printer Intervention Required Notification','Yes'],
+    ['0x85','SID','Status','Select Input Device','Yes'],
+    ['0x86','SOD','Status','Select Output Device','Yes'],
+    ['0x87','SPS','Status','Select Process Speed','Yes'],
+    ['0x88','TLN','Misc','Tray Lock Notification (DELETED)','Yes'],
+    ['0x89','DT','Diagnostics','Diagnostic Test','Yes'],
+    ['0x8A','QDC','Configuration','Query Device Characteristics','Yes'],
+    ['0x8B','QDI','Configuration','Query Device Inventory','Yes'],
+    ['0x8D','QPPC','Configuration','Query Paper Path Characteristics','Yes'],
+    ['0x8E','QPPS','Status','Query Paper Position Status','Yes'],
+    ['0x8F','BCME','Synchronization','Broadcast Communications Mode Echo','Yes'],
+    ['0x90','DMO','Misc','Device Maintenance Operation','Yes'],
+    ['0x91','MSN','Misc','Media Size Notification','Yes'],
+    ['0x92','DOC','Steady State','Device Operation Command','Yes'],
+    ['0x93','RDN','Misc','Read Device NVRAM','Yes'],
+    ['0x94','WDN','Misc','Write Device NVRAM','Yes'],
+    ['0x95','RDNDA','Misc','Restore Device NVRAM Data Area','Yes'],
+    ['0x96','LOB','Misc','Locate Output Bin','Yes'],
+    ['0x97','TS/SLPQ','Steady State','Track Speed / SLPQ shared (legacy)','Yes'],
+    ['0x98','SLPQ','Steady State','Submit Logical Page to Queue','Yes'],
+    ['0x99','QDXX','Status','Query Dot XX Error Code','Yes'],
+    ['0xA0','EAE','Misc','Enable Application Execution','No'],
+    ['0xA1','RDLD','Misc','Request to Download Data','Yes'],
+    ['0xA2','DLDB','Misc','Download Data Block','Yes'],
+    ['0xA3','DLDC','Misc','Download Data Complete','No'],
+    ['0xA4','PTC','Steady State','Pass-Through Control','Yes'],
+    ['0xA5','TS','Steady State','Track Speed (new opcode)','Yes'],
+    ['0xA6','QSPDD','Status','Query Serial Port Debug Data','Yes'],
+    ['0xB0','ICP','Misc','Initiate Calibration Process','Yes'],
+    ['0xB1','DETS','Status','Distance to End Track Speed','Yes'],
+    ['0xB2','MSADTO','Configuration','Media Sensor A/D Threshold Offset','Yes'],
+    ['0xB3','SIDX','Status','Select Input Device eXtended','Yes'],
+    ['0xB4','FAN','Misc','Fan Activation Notification','Yes'],
+    ['0xB5','ILN','Steady State','Image Location Notification','Yes'],
+    ['0xB6','LIN','Misc','Lighting Notification','Yes'],
+    ['0xB7','LIP','Misc','Lighting Ping','No'],
+    ['0xB8','SCP','Steady State','Set Control Parameters','Yes'],
+    ['0xB9','GCP','Status','Get Control Parameters','Yes'],
+    ['0xBA','PTEN','Status','Pick Time Error Notification','Yes'],
+    ['0xBB','QHCD','Status','Query Health Check Data','Yes'],
+    ['0xBC','QNC','Status','Query Number of Covers','No'],
+    ['0xFD','SMC','Misc','Special Manufacturing Command','Yes'],
+    ['0xFE','SDC','Misc','Special Development Command','Yes'],
+    ['0xFF','CER','Misc','Communications Error Response','No']
+  ];
+  document.getElementById('opcodeBody').innerHTML=ops.map(o=>`<tr><td class="mono" style="font-weight:800;color:var(--xr);">${o[0]}</td><td class="cmd">${o[1]}</td><td>${o[2]}</td><td style="font-size:10px;">${o[3]}</td><td>${o[4]}</td></tr>`).join('');
+
+  document.getElementById('slpqRef').innerHTML=`
+    <table class="opcode-table">
+      <thead><tr><th>Field</th><th>Byte</th><th>Values</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Sub-Command</strong></td><td>N1 bits 0-3</td><td>0=Submit New Page · 1=Update Last Page · 2=Remove Last Page by Page ID</td></tr>
+        <tr><td><strong>Staple Position</strong></td><td>N1 bits 4-7</td><td>0=None · 1=TopLeft · 2=TopDual · 3=LeftDual · 0x11=TopRight · 0x14=TopLeft Diag · 0x15=TopRight Diag</td></tr>
+        <tr><td><strong>Page ID</strong></td><td>N2</td><td>0x00=Reserved · 0x01-0xFF=Page ID</td></tr>
+        <tr><td><strong>Bin Destination</strong></td><td>N3</td><td>0x00-0xFF output bin number</td></tr>
+        <tr><td><strong>Tray Offset Position</strong></td><td>N4</td><td>0=Default · 1=Left/Front · 2=Right/Rear</td></tr>
+        <tr><td><strong>Accumulator Function</strong></td><td>N5</td><td>0=Do Not Accumulate · 1=Accumulate</td></tr>
+        <tr><td><strong>Finishing Function</strong></td><td>N6</td><td>0=None · 1=Flush · 2=Staple · 3=Prime</td></tr>
+        <tr><td><strong>Hole-Punch Function</strong></td><td>N7</td><td>0=None · 1=NA 3-hole · 2=ISO 2-hole · 3=US 2-hole · 4=ISO 4-hole</td></tr>
+        <tr><td><strong>Staple Position Function</strong></td><td>N8 (optional)</td><td>See DOC N2 staple patterns (0x01-0x15)</td></tr>
+      </tbody>
+    </table>`;
+
+  document.getElementById('mediaRef').innerHTML=`
+    <table class="opcode-table">
+      <thead><tr><th>Size</th><th>Enum (QDI/MSN)</th><th>Dimensions (mm)</th></tr></thead>
+      <tbody>
+        <tr><td>A4</td><td class="mono">0x02</td><td>210 × 297</td></tr>
+        <tr><td>Legal (LGL)</td><td class="mono">0x04</td><td>215.9 × 355.6</td></tr>
+        <tr><td>B5</td><td class="mono">0x06</td><td>182 × 257</td></tr>
+        <tr><td>A5</td><td class="mono">0x08</td><td>148 × 210</td></tr>
+        <tr><td>Executive (EXEC)</td><td class="mono">0x0A</td><td>184.2 × 266.7</td></tr>
+        <tr><td>Letter (LTR)</td><td class="mono">0x0C</td><td>215.9 × 279.4</td></tr>
+        <tr><td>Custom</td><td class="mono">0x0E</td><td>—</td></tr>
+        <tr><td>Statement</td><td class="mono">0x10</td><td>139.7 × 215.9</td></tr>
+        <tr><td>Folio</td><td class="mono">0x11</td><td>209.6 × 355.6</td></tr>
+        <tr><td>A6</td><td class="mono">0x12</td><td>105 × 148</td></tr>
+        <tr><td>Oficio</td><td class="mono">0x13</td><td>215.9 × 355.6</td></tr>
+        <tr><td>Envelope (generic)</td><td class="mono">0x80</td><td>—</td></tr>
+        <tr><td>#9 Envelope</td><td class="mono">0x81</td><td>—</td></tr>
+        <tr><td>#10 Envelope</td><td class="mono">0x82</td><td>—</td></tr>
+        <tr><td>DL Envelope</td><td class="mono">0x83</td><td>—</td></tr>
+        <tr><td>C5 Envelope</td><td class="mono">0x84</td><td>—</td></tr>
+        <tr><td>B5 Envelope</td><td class="mono">0x85</td><td>—</td></tr>
+      </tbody>
+    </table>`;
+})();
+</script>
+</body>
+</html>
