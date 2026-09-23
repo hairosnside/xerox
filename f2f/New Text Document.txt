@@ -1,0 +1,47 @@
+How to Run index.html in VS Code Using Go Live
+1. Install Visual Studio Code
+Download from the official site: 
+https://code.visualstudio.com
+Install it on your computer.
+2. Open Your Project Folder
+Launch VS Code.
+Click File → Open Folder (or press Ctrl + K + O).
+Select the folder containing your index.html file.
+Example:
+
+Copy code
+my-project/
+  ├── index.html
+3. Install the Go Live (Live Server) Extension
+Click the Extensions icon on the left sidebar (or press Ctrl + Shift + X).
+Search for Live Server.
+Install the one by Ritwick Dey.
+After installation, you’ll see a Go Live button at the bottom-right of VS Code.
+4. Open index.html with Go Live
+You have two options:
+
+Method 1 – Right-Click
+
+Right-click index.html in the Explorer panel.
+Select Open with Live Server.
+Method 2 – Status Bar Button
+
+Open index.html in the editor.
+Click the Go Live button in the bottom-right corner.
+5. View in Browser
+Your default browser will open automatically at a local address like:
+
+Copy code
+http://127.0.0.1:5500/index.html
+This is your live preview.
+6. Edit and Auto-Refresh
+Make changes to index.html, style.css, or linked JavaScript files.
+Press Ctrl + S to save — the browser will refresh automatically.
+7. Stop the Live Server
+Click the Port: 5500 or Go Live button again in the bottom bar to stop the server.
+✅ Tip:
+If Go Live doesn’t appear, make sure:
+
+You opened a folder, not just a single file.
+The Live Server extension is installed and enabled.
+Restart VS Code if needed.
