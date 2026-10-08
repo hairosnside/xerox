@@ -1,0 +1,1568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <meta
+    name="theme-color"
+    content="#a50000"
+  >
+
+  <title>Paper Path Pulse | Live Printer</title>
+
+  <style>
+    :root {
+      --red: #c40000;
+      --red-dark: #770000;
+      --red-light: #f05b5b;
+      --ink: #261010;
+      --muted: #846b6b;
+      --line: #efd7d7;
+      --white: #ffffff;
+      --green: #078b3a;
+      --amber: #c97800;
+      --danger: #d62839;
+      --background: #faf6f6;
+
+      --shadow:
+        0 14px 36px rgba(90, 0, 0, 0.10);
+
+      --radius: 16px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+
+      font-family:
+        Inter,
+        "Segoe UI",
+        Arial,
+        sans-serif;
+
+      color: var(--ink);
+      background: var(--background);
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    .topbar {
+      min-height: 58px;
+      padding: 0 24px;
+
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+
+      background: var(--white);
+      border-bottom: 1px solid var(--line);
+
+      position: sticky;
+      top: 0;
+      z-index: 5;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo {
+      width: 32px;
+      height: 32px;
+
+      border-radius: 9px;
+
+      background:
+        linear-gradient(
+          135deg,
+          var(--red),
+          #ff7474
+        );
+
+      box-shadow:
+        0 7px 18px rgba(191, 0, 0, 0.27);
+    }
+
+    .brand b {
+      display: block;
+      color: var(--red-dark);
+      font-size: 19px;
+    }
+
+    .brand small {
+      display: block;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .status-pill {
+      padding: 8px 12px;
+      border-radius: 999px;
+
+      font-size: 12px;
+      font-weight: 800;
+
+      background: #f1eaea;
+      color: var(--muted);
+    }
+
+    .status-pill.ok {
+      background: #eaf8ef;
+      color: var(--green);
+    }
+
+    .status-pill.bad {
+      background: #fff0f1;
+      color: var(--danger);
+    }
+
+    .hero {
+      padding: 26px 28px;
+
+      color: var(--white);
+
+      background:
+        radial-gradient(
+          circle at 80% 10%,
+          #bd1616,
+          transparent 38%
+        ),
+        linear-gradient(
+          125deg,
+          #4d0000,
+          #850000 58%,
+          #a70000
+        );
+
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 24px;
+      align-items: center;
+    }
+
+    .hero h1 {
+      margin: 0 0 8px;
+      font-size: 30px;
+    }
+
+    .hero p {
+      margin: 0;
+      color: #ffdede;
+    }
+
+    .hero-meta {
+      margin-top: 17px;
+
+      display: flex;
+      gap: 22px;
+      flex-wrap: wrap;
+
+      font-size: 13px;
+    }
+
+    .hero-meta b {
+      display: block;
+
+      margin-top: 3px;
+
+      color: var(--white);
+      font-size: 16px;
+    }
+
+    .controls {
+      padding: 12px;
+
+      display: flex;
+      align-items: center;
+      gap: 9px;
+
+      background: rgba(255, 255, 255, 0.09);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 13px;
+    }
+
+    .controls input {
+      width: 165px;
+      padding: 10px 12px;
+
+      border: 0;
+      border-radius: 9px;
+      outline: none;
+    }
+
+    .btn {
+      padding: 10px 14px;
+
+      border: 0;
+      border-radius: 9px;
+
+      cursor: pointer;
+      font-weight: 800;
+    }
+
+    .btn.primary {
+      background: var(--white);
+      color: var(--red-dark);
+    }
+
+    .btn.primary:disabled {
+      opacity: 0.6;
+      cursor: wait;
+    }
+
+    main {
+      max-width: 1500px;
+      margin: auto;
+      padding: 18px;
+    }
+
+    .grid {
+      display: grid;
+      gap: 14px;
+    }
+
+    .kpis {
+      grid-template-columns:
+        repeat(
+          6,
+          minmax(145px, 1fr)
+        );
+
+      margin-bottom: 14px;
+    }
+
+    .card {
+      background: var(--white);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .kpi {
+      min-height: 120px;
+      padding: 17px;
+    }
+
+    .kpi small {
+      display: block;
+
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+    }
+
+    .kpi strong {
+      display: block;
+
+      margin: 12px 0 7px;
+
+      font-size: 23px;
+      word-break: break-word;
+    }
+
+    .kpi span {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .layout {
+      grid-template-columns: 1.2fr 0.8fr;
+    }
+
+    .panel {
+      padding: 18px;
+    }
+
+    .panel h2 {
+      margin: 0 0 15px;
+
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+
+      font-size: 16px;
+      color: var(--red-dark);
+    }
+
+    .panel h2 small {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .details {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .detail {
+      padding: 12px;
+
+      background: #fff8f8;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+    }
+
+    .detail small {
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .detail b {
+      display: block;
+      margin-top: 5px;
+      font-size: 13px;
+      word-break: break-word;
+    }
+
+    .table-wrap {
+      max-width: 100%;
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    th,
+    td {
+      padding: 10px 8px;
+
+      text-align: left;
+      border-bottom: 1px solid #f3e5e5;
+    }
+
+    th {
+      color: var(--muted);
+      background: #fff7f7;
+
+      font-size: 10px;
+      text-transform: uppercase;
+    }
+
+    .bar {
+      min-width: 90px;
+      height: 8px;
+
+      margin-top: 5px;
+
+      background: #f0dddd;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .bar i {
+      display: block;
+      height: 100%;
+
+      background:
+        linear-gradient(
+          90deg,
+          var(--red),
+          var(--red-light)
+        );
+
+      border-radius: 10px;
+    }
+
+    .badge {
+      display: inline-block;
+
+      padding: 3px 8px;
+
+      border-radius: 999px;
+
+      background: #eaf8ef;
+      color: var(--green);
+
+      font-size: 10px;
+      font-weight: 800;
+    }
+
+    .badge.warn {
+      background: #fff4df;
+      color: var(--amber);
+    }
+
+    .badge.bad {
+      background: #fff0f1;
+      color: var(--danger);
+    }
+
+    .empty {
+      padding: 35px;
+      text-align: center;
+      color: var(--muted);
+    }
+
+    .error {
+      display: none;
+
+      margin-bottom: 14px;
+      padding: 13px 15px;
+
+      border: 1px solid #f6cdd2;
+      border-radius: 11px;
+
+      background: #fff0f1;
+      color: var(--danger);
+
+      white-space: pre-wrap;
+    }
+
+    .error.show {
+      display: block;
+    }
+
+    .launch-guide {
+      display: none;
+
+      margin-bottom: 14px;
+      padding: 18px;
+
+      background: #fff7df;
+      border: 1px solid #f0d99c;
+      border-radius: 13px;
+      color: #694600;
+    }
+
+    .launch-guide.show {
+      display: block;
+    }
+
+    .launch-guide h3 {
+      margin: 0 0 10px;
+    }
+
+    .launch-guide p {
+      margin: 6px 0;
+      line-height: 1.5;
+    }
+
+    .launch-guide code {
+      display: inline-block;
+
+      margin-top: 5px;
+      padding: 6px 8px;
+
+      background: #2b1b00;
+      color: #fff7df;
+
+      border-radius: 6px;
+    }
+
+    .raw {
+      margin-top: 14px;
+    }
+
+    .raw summary {
+      cursor: pointer;
+      color: var(--red-dark);
+      font-weight: 800;
+    }
+
+    pre {
+      max-height: 460px;
+      overflow: auto;
+
+      padding: 14px;
+
+      background: #211010;
+      color: #ffecec;
+
+      border-radius: 11px;
+
+      font-size: 11px;
+      line-height: 1.5;
+    }
+
+    @media (max-width: 1100px) {
+      .kpis {
+        grid-template-columns:
+          repeat(3, 1fr);
+      }
+
+      .layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 650px) {
+      .topbar {
+        padding: 0 14px;
+      }
+
+      .hero {
+        grid-template-columns: 1fr;
+        padding: 20px;
+      }
+
+      .controls {
+        flex-wrap: wrap;
+      }
+
+      .controls input {
+        width: 100%;
+      }
+
+      .kpis {
+        grid-template-columns:
+          repeat(2, 1fr);
+      }
+
+      .details {
+        grid-template-columns:
+          repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 430px) {
+      .kpis,
+      .details {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo"></span>
+
+      <div>
+        <b>Paper Path Pulse</b>
+        <small>Live NTCLI dashboard</small>
+      </div>
+    </div>
+
+    <span
+      id="connectionBadge"
+      class="status-pill"
+    >
+      Waiting
+    </span>
+  </header>
+
+  <section class="hero">
+    <div>
+      <h1>Printer Health Overview</h1>
+
+      <p>
+        Settings, status, supplies, and destination
+        data through SSH and NTCLI.
+      </p>
+
+      <div class="hero-meta">
+        <div>
+          Printer IP
+          <b id="heroIp">10.194.23.205</b>
+        </div>
+
+        <div>
+          Serial Number
+          <b id="heroSerial">-</b>
+        </div>
+
+        <div>
+          Model
+          <b id="heroModel">-</b>
+        </div>
+
+        <div>
+          Last Updated
+          <b id="heroUpdated">-</b>
+        </div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <input
+        id="ipInput"
+        value="10.194.23.205"
+        aria-label="Printer IP address"
+        autocomplete="off"
+        spellcheck="false"
+      >
+
+      <button
+        id="refreshBtn"
+        class="btn primary"
+        type="button"
+      >
+        Refresh
+      </button>
+    </div>
+  </section>
+
+  <main>
+    <div
+      id="launchGuide"
+      class="launch-guide"
+    >
+      <h3>Open the dashboard from the Node server</h3>
+
+      <p>
+        This HTML is currently running inside a file preview
+        or embedded SharePoint frame.
+      </p>
+
+      <p>
+        Start the server and open:
+      </p>
+
+      <code>http://localhost:8787/</code>
+
+      <p>
+        Do not use the SharePoint, OneDrive, or Copilot HTML
+        preview for the live dashboard.
+      </p>
+    </div>
+
+    <div
+      id="errorBox"
+      class="error"
+    ></div>
+
+    <section class="grid kpis">
+      <article class="card kpi">
+        <small>Print State</small>
+        <strong id="printState">-</strong>
+        <span id="printReady">Awaiting data</span>
+      </article>
+
+      <article class="card kpi">
+        <small>Power</small>
+        <strong id="powerState">-</strong>
+        <span id="powerRequested">Requested: -</span>
+      </article>
+
+      <article class="card kpi">
+        <small>Side Count</small>
+        <strong id="sideCount">-</strong>
+        <span id="permanentCount">Permanent: -</span>
+      </article>
+
+      <article class="card kpi">
+        <small>Maximum Speed</small>
+        <strong id="maxSpeed">-</strong>
+        <span>pages per minute</span>
+      </article>
+
+      <article class="card kpi">
+        <small>Temperature</small>
+        <strong id="temperature">-</strong>
+        <span>Engine environment</span>
+      </article>
+
+      <article class="card kpi">
+        <small>Humidity</small>
+        <strong id="humidity">-</strong>
+        <span>Relative humidity</span>
+      </article>
+    </section>
+
+    <section class="grid layout">
+      <div class="grid">
+        <article class="card panel">
+          <h2>
+            Printer Details
+            <small id="firmware">Firmware: -</small>
+          </h2>
+
+          <div
+            id="details"
+            class="details"
+          ></div>
+        </article>
+
+        <article class="card panel">
+          <h2>
+            Supplies
+            <small id="supplyCount">0 items</small>
+          </h2>
+
+          <div
+            id="suppliesWrap"
+            class="empty"
+          >
+            Waiting for supply data
+          </div>
+        </article>
+      </div>
+
+      <div class="grid">
+        <article class="card panel">
+          <h2>
+            Destinations
+            <small id="destinationCount">0 bins</small>
+          </h2>
+
+          <div
+            id="destinationsWrap"
+            class="empty"
+          >
+            Waiting for destination data
+          </div>
+        </article>
+
+        <article class="card panel">
+          <h2>Calibration and Errors</h2>
+
+          <div
+            id="healthDetails"
+            class="details"
+          ></div>
+        </article>
+      </div>
+    </section>
+
+    <details class="card panel raw">
+      <summary>Raw normalized API response</summary>
+
+      <pre id="rawOutput">Waiting for data...</pre>
+    </details>
+  </main>
+
+  <script>
+    (() => {
+      'use strict';
+
+      const DEFAULT_PRINTER_IP =
+        '10.194.23.205';
+
+      /*
+       * The dashboard must be served by server.js.
+       *
+       * When opened at:
+       *   http://localhost:8787/
+       *
+       * this resolves to:
+       *   http://localhost:8787/api/ntcli
+       */
+      const API_PATH =
+        '/api/ntcli';
+
+      const REFRESH_INTERVAL_MS =
+        30000;
+
+      const $ = id =>
+        document.getElementById(id);
+
+      let refreshTimer = null;
+
+      /*
+       * A SharePoint or OneDrive preview can use
+       * about:srcdoc, which has no usable server origin.
+       */
+      function isValidServerPage() {
+        const protocol =
+          window.location.protocol;
+
+        const hostname =
+          window.location.hostname;
+
+        const isHttp =
+          protocol === 'http:' ||
+          protocol === 'https:';
+
+        const isLocalServer =
+          hostname === 'localhost' ||
+          hostname === '127.0.0.1';
+
+        return isHttp && isLocalServer;
+      }
+
+      function getApiUrl(printerIp) {
+        const apiUrl =
+          new URL(
+            API_PATH,
+            window.location.origin
+          );
+
+        apiUrl.searchParams.set(
+          'ip',
+          printerIp
+        );
+
+        return apiUrl.toString();
+      }
+
+      function escapeHtml(value) {
+        return String(
+          value == null ? '' : value
+        )
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+      }
+
+      /*
+       * NTCLI output is JSON-like but may include:
+       *
+       *   - Trailing commas
+       *   - Unquoted <hex:...> values
+       *
+       * This function converts it into valid JSON.
+       */
+      function parseNtcliSection(value) {
+        if (value == null) {
+          return {};
+        }
+
+        if (typeof value === 'object') {
+          return value;
+        }
+
+        if (
+          typeof value !== 'string' ||
+          !value.trim()
+        ) {
+          return {};
+        }
+
+        /*
+         * First try standard JSON.
+         */
+        try {
+          return JSON.parse(value);
+        } catch (_) {
+          /*
+           * Continue with NTCLI cleanup.
+           */
+        }
+
+        try {
+          const cleaned =
+            value
+              .replace(
+                /<hex:([0-9a-fA-F]*)>/g,
+                (_, hex) =>
+                  JSON.stringify(
+                    `<hex:${hex}>`
+                  )
+              )
+              .replace(
+                /,\s*([}\]])/g,
+                '$1'
+              );
+
+          return JSON.parse(cleaned);
+        } catch (error) {
+          console.error(
+            'Failed to parse NTCLI section:',
+            error
+          );
+
+          return {};
+        }
+      }
+
+      function formatNumber(
+        value,
+        digits = 0
+      ) {
+        const number =
+          Number(value);
+
+        if (!Number.isFinite(number)) {
+          return '-';
+        }
+
+        return number.toLocaleString(
+          undefined,
+          {
+            minimumFractionDigits:
+              digits,
+
+            maximumFractionDigits:
+              digits
+          }
+        );
+      }
+
+      function createBadge(state) {
+        const text =
+          String(state || 'Unknown');
+
+        const lower =
+          text.toLowerCase();
+
+        let cssClass = '';
+
+        if (
+          lower.includes('low') ||
+          lower.includes('warn')
+        ) {
+          cssClass = 'warn';
+        } else if (
+          lower !== 'ok' &&
+          lower !== 'ready' &&
+          lower !== 'empty'
+        ) {
+          cssClass = 'bad';
+        }
+
+        return (
+          `<span class="badge ${cssClass}">` +
+          `${escapeHtml(text)}` +
+          `</span>`
+        );
+      }
+
+      function createDetail(
+        label,
+        value
+      ) {
+        const displayedValue =
+          value == null ||
+          value === ''
+            ? '-'
+            : value;
+
+        return (
+          `<div class="detail">` +
+            `<small>${escapeHtml(label)}</small>` +
+            `<b>${escapeHtml(displayedValue)}</b>` +
+          `</div>`
+        );
+      }
+
+      function setConnectionState(
+        type,
+        message
+      ) {
+        const badge =
+          $('connectionBadge');
+
+        badge.textContent = message;
+
+        badge.className =
+          'status-pill';
+
+        if (type) {
+          badge.classList.add(type);
+        }
+      }
+
+      function renderPrinterDetails(
+        settings,
+        status
+      ) {
+        const items = [
+          [
+            'Operating Mode',
+            settings.operatingMode
+          ],
+          [
+            'Fuser Mode',
+            settings.fuserMode
+          ],
+          [
+            'Device Type',
+            status.technologyIsColor
+              ? 'Color Printer'
+              : 'Mono Printer'
+          ],
+          [
+            'API Version',
+            status.Version?.api
+          ],
+          [
+            'Release',
+            status.Version?.release
+          ],
+          [
+            'Power Supply',
+            settings.HardwareConfig
+              ?.powerSupply
+          ],
+          [
+            'Duplex',
+            settings.HardwareConfig
+              ?.duplexCapability
+          ],
+          [
+            'MP Feeder',
+            settings.HardwareConfig
+              ?.mpFeederCapacity
+          ],
+          [
+            'Finisher',
+            settings.CustomFeatures
+              ?.finisherConfiguration
+          ]
+        ];
+
+        $('details').innerHTML =
+          items
+            .map(
+              item =>
+                createDetail(
+                  item[0],
+                  item[1]
+                )
+            )
+            .join('');
+      }
+
+      function renderSupplies(supplies) {
+        const entries =
+          Object.entries(supplies);
+
+        $('supplyCount').textContent =
+          `${entries.length} items`;
+
+        if (!entries.length) {
+          $('suppliesWrap').className =
+            'empty';
+
+          $('suppliesWrap').innerHTML =
+            'No supplies returned';
+
+          return;
+        }
+
+        const rows =
+          entries
+            .map(([name, item]) => {
+              const percent =
+                Number(
+                  item.Status
+                    ?.percentRemaining
+                );
+
+              const width =
+                Number.isFinite(percent)
+                  ? Math.max(
+                      0,
+                      Math.min(100, percent)
+                    )
+                  : 0;
+
+              const percentText =
+                Number.isFinite(percent)
+                  ? `${percent}%`
+                  : '-';
+
+              return `
+                <tr>
+                  <td>
+                    <b>${escapeHtml(name)}</b>
+                    <br>
+                    <small>
+                      ${escapeHtml(
+                        item.Attributes
+                          ?.partNumber || ''
+                      )}
+                    </small>
+                  </td>
+
+                  <td>
+                    ${createBadge(
+                      item.Status?.state
+                    )}
+                  </td>
+
+                  <td>
+                    <b>${percentText}</b>
+
+                    <div class="bar">
+                      <i
+                        style="width:${width}%"
+                      ></i>
+                    </div>
+                  </td>
+
+                  <td>
+                    ${formatNumber(
+                      item.Dynamic
+                        ?.pagesRemaining
+                    )}
+                  </td>
+
+                  <td>
+                    ${formatNumber(
+                      item.Dynamic
+                        ?.daysRemaining
+                    )}
+                  </td>
+                </tr>
+              `;
+            })
+            .join('');
+
+        $('suppliesWrap').className =
+          'table-wrap';
+
+        $('suppliesWrap').innerHTML = `
+          <table>
+            <thead>
+              <tr>
+                <th>Supply</th>
+                <th>Status</th>
+                <th>Remaining</th>
+                <th>Pages</th>
+                <th>Days</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              ${rows}
+            </tbody>
+          </table>
+        `;
+      }
+
+      function renderDestinations(
+        destinations
+      ) {
+        const entries =
+          Object.entries(destinations);
+
+        $('destinationCount').textContent =
+          `${entries.length} bins`;
+
+        if (!entries.length) {
+          $('destinationsWrap').className =
+            'empty';
+
+          $('destinationsWrap').innerHTML =
+            'No destinations returned';
+
+          return;
+        }
+
+        const rows =
+          entries
+            .map(([name, bin]) => {
+              return `
+                <tr>
+                  <td>
+                    <b>${escapeHtml(name)}</b>
+                  </td>
+
+                  <td>
+                    ${createBadge(bin.level)}
+                  </td>
+
+                  <td>
+                    ${formatNumber(
+                      bin.capacity
+                    )}
+                  </td>
+
+                  <td>
+                    ${escapeHtml(
+                      bin.deviceType || '-'
+                    )}
+                  </td>
+
+                  <td>
+                    ${escapeHtml(
+                      bin.StapleCartridge
+                        ?.status || '-'
+                    )}
+                  </td>
+
+                  <td>
+                    ${escapeHtml(
+                      bin.PunchBox
+                        ?.status || '-'
+                    )}
+                  </td>
+                </tr>
+              `;
+            })
+            .join('');
+
+        $('destinationsWrap').className =
+          'table-wrap';
+
+        $('destinationsWrap').innerHTML = `
+          <table>
+            <thead>
+              <tr>
+                <th>Destination</th>
+                <th>Level</th>
+                <th>Capacity</th>
+                <th>Type</th>
+                <th>Staple</th>
+                <th>Punch</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              ${rows}
+            </tbody>
+          </table>
+        `;
+      }
+
+      function renderHealth(
+        settings,
+        status
+      ) {
+        const errors =
+          status.Errors || {};
+
+        const calibration =
+          status.Calibration || {};
+
+        const items = [
+          [
+            'Errors',
+            Object.keys(errors).length
+          ],
+          [
+            'Safe Mode',
+            status.safeMode
+              ? 'Yes'
+              : 'No'
+          ],
+          [
+            '600 dpi',
+            calibration['600dpi']
+              ?.valid
+                ? 'Valid'
+                : 'Invalid'
+          ],
+          [
+            '600 dpi Stochastic',
+            calibration[
+              '600dpiStochastic'
+            ]?.valid
+              ? 'Valid'
+              : 'Invalid'
+          ],
+          [
+            '1200 dpi',
+            calibration['1200dpi']
+              ?.valid
+                ? 'Valid'
+                : 'Invalid'
+          ],
+          [
+            'Optional Devices',
+            settings
+              .optionalDevicesState
+          ]
+        ];
+
+        $('healthDetails').innerHTML =
+          items
+            .map(
+              item =>
+                createDetail(
+                  item[0],
+                  item[1]
+                )
+            )
+            .join('');
+      }
+
+      function render(raw) {
+        const settings =
+          parseNtcliSection(
+            raw.settings
+          );
+
+        const status =
+          parseNtcliSection(
+            raw.status
+          );
+
+        const supplies =
+          parseNtcliSection(
+            raw.supplies
+          );
+
+        const destinations =
+          parseNtcliSection(
+            raw.destination
+          );
+
+        const normalized = {
+          ...raw,
+          settings,
+          status,
+          supplies,
+          destination:
+            destinations
+        };
+
+        $('heroIp').textContent =
+          raw.ip ||
+          $('ipInput').value;
+
+        $('heroSerial').textContent =
+          settings.serialNumber || '-';
+
+        $('heroModel').textContent =
+          settings.modelType || '-';
+
+        $('heroUpdated').textContent =
+          raw.fetchedAt
+            ? new Date(
+                raw.fetchedAt
+              ).toLocaleTimeString()
+            : '-';
+
+        $('printState').textContent =
+          status.Printing?.state || '-';
+
+        $('printReady').textContent =
+          status.printReady
+            ? 'Ready to print'
+            : 'Not ready';
+
+        $('powerState').textContent =
+          status.PowerState?.actual || '-';
+
+        $('powerRequested').textContent =
+          `Requested: ${
+            status.PowerState
+              ?.requested || '-'
+          }`;
+
+        $('sideCount').textContent =
+          formatNumber(
+            status.sideCount
+          );
+
+        $('permanentCount').textContent =
+          `Permanent: ${formatNumber(
+            status.sideCountPermanent
+          )}`;
+
+        $('maxSpeed').textContent =
+          formatNumber(
+            status.maxSpeed
+          );
+
+        $('temperature').textContent =
+          `${formatNumber(
+            status.Environment
+              ?.temperature,
+            1
+          )} °C`;
+
+        $('humidity').textContent =
+          `${formatNumber(
+            status.Environment
+              ?.humidity,
+            1
+          )}%`;
+
+        $('firmware').textContent =
+          `Firmware: ${
+            status.Version?.engine || '-'
+          }`;
+
+        renderPrinterDetails(
+          settings,
+          status
+        );
+
+        renderSupplies(
+          supplies
+        );
+
+        renderDestinations(
+          destinations
+        );
+
+        renderHealth(
+          settings,
+          status
+        );
+
+        $('rawOutput').textContent =
+          JSON.stringify(
+            normalized,
+            null,
+            2
+          );
+
+        if (status.printReady) {
+          setConnectionState(
+            'ok',
+            'Connected · Ready'
+          );
+        } else {
+          setConnectionState(
+            'bad',
+            'Connected · Not Ready'
+          );
+        }
+      }
+
+      async function refresh(
+        showError = true
+      ) {
+        if (!isValidServerPage()) {
+          $('launchGuide')
+            .classList
+            .add('show');
+
+          setConnectionState(
+            'bad',
+            'Open from localhost'
+          );
+
+          return;
+        }
+
+        $('launchGuide')
+          .classList
+          .remove('show');
+
+        const printerIp =
+          $('ipInput')
+            .value
+            .trim() ||
+          DEFAULT_PRINTER_IP;
+
+        const button =
+          $('refreshBtn');
+
+        button.disabled = true;
+        button.textContent =
+          'Loading...';
+
+        setConnectionState(
+          '',
+          'Connecting...'
+        );
+
+        $('errorBox')
+          .classList
+          .remove('show');
+
+        try {
+          const apiUrl =
+            getApiUrl(printerIp);
+
+          const response =
+            await fetch(
+              apiUrl,
+              {
+                cache: 'no-store'
+              }
+            );
+
+          const raw =
+            await response.json();
+
+          if (
+            !response.ok ||
+            raw.ok === false
+          ) {
+            throw new Error(
+              raw.error ||
+              `HTTP ${response.status}`
+            );
+          }
+
+          render(raw);
+        } catch (error) {
+          console.error(error);
+
+          setConnectionState(
+            'bad',
+            'Connection failed'
+          );
+
+          if (showError) {
+            $('errorBox').textContent =
+              error.message ||
+              'Unable to fetch printer data';
+
+            $('errorBox')
+              .classList
+              .add('show');
+          }
+        } finally {
+          button.disabled = false;
+          button.textContent =
+            'Refresh';
+        }
+      }
+
+      $('refreshBtn')
+        .addEventListener(
+          'click',
+          () => refresh(true)
+        );
+
+      $('ipInput')
+        .addEventListener(
+          'keydown',
+          event => {
+            if (event.key === 'Enter') {
+              refresh(true);
+            }
+          }
+        );
+
+      /*
+       * Set the selected default printer.
+       */
+      $('ipInput').value =
+        DEFAULT_PRINTER_IP;
+
+      $('heroIp').textContent =
+        DEFAULT_PRINTER_IP;
+
+      /*
+       * Only start live requests when served
+       * from the local Node server.
+       */
+      if (isValidServerPage()) {
+        refresh(true);
+
+        refreshTimer =
+          setInterval(
+            () => refresh(false),
+            REFRESH_INTERVAL_MS
+          );
+      } else {
+        $('launchGuide')
+          .classList
+          .add('show');
+
+        setConnectionState(
+          'bad',
+          'Open from localhost'
+        );
+
+        $('refreshBtn').disabled =
+          true;
+      }
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,121 @@
+{
+  "Standard Bin": {
+    "capacity": 250,
+    "level": "Empty",
+    "levelsReported": 4,
+    "earlyWarningThreshold": "NearFull",
+    "fullSensing": true,
+    "emptySensing": true,
+    "offsetCapable": false,
+    "stapleAndOffsetCapable": false,
+    "punchPatterns": [
+      "Swedish 4 Hole",
+    ],
+    "foldPatterns": [
+      "V-Fold",
+      "C-Fold",
+      "Z-Fold",
+      "Z-Fold Half Sheet",
+    ],
+    "deviceType": "StapleStacker",
+    "PunchBox": {
+      "status": "OK",
+      "capacity": 15000,
+    },
+    "Accumulator": {
+      "status": "Empty",
+      "capacity": 0,
+    },
+  },
+  "Bin 1": {
+    "capacity": 2000,
+    "level": "Empty",
+    "levelsReported": 4,
+    "earlyWarningThreshold": "NearFull",
+    "fullSensing": true,
+    "emptySensing": true,
+    "offsetCapable": true,
+    "stapleAndOffsetCapable": false,
+    "staplePatterns": [
+      "Top Right Diagonal",
+      "Top Left Diagonal",
+      "Top Right",
+      "Top Dual",
+      "Top Left",
+    ],
+    "punchPatterns": [
+      "Swedish 4 Hole",
+    ],
+    "foldPatterns": [
+      "V-Fold",
+      "C-Fold",
+      "Z-Fold",
+      "Z-Fold Half Sheet",
+    ],
+    "deviceType": "StapleStacker",
+    "StapleCartridge": {
+      "status": "OK",
+      "capacity": 5000,
+    },
+    "PunchBox": {
+      "status": "OK",
+      "capacity": 15000,
+    },
+    "Accumulator": {
+      "status": "Empty",
+      "capacity": 50,
+    },
+  },
+  "Bin 2": {
+    "capacity": 120,
+    "level": "Empty",
+    "levelsReported": 4,
+    "earlyWarningThreshold": "NearFull",
+    "fullSensing": true,
+    "emptySensing": false,
+    "offsetCapable": false,
+    "stapleAndOffsetCapable": false,
+    "staplePatterns": [
+      "Top Dual",
+    ],
+    "foldPatterns": [
+      "V-Fold",
+      "V-Fold Multiple",
+    ],
+    "deviceType": "StapleStacker",
+    "StapleCartridge": {
+      "status": "OK",
+      "capacity": 5000,
+    },
+    "StapleCartridge_2": {
+      "status": "OK",
+      "capacity": 5000,
+    },
+    "Accumulator": {
+      "status": "Empty",
+      "capacity": 20,
+    },
+  },
+  "Bin 3": {
+    "capacity": 100,
+    "level": "Empty",
+    "levelsReported": 2,
+    "fullSensing": true,
+    "emptySensing": false,
+    "offsetCapable": false,
+    "stapleAndOffsetCapable": false,
+    "foldPatterns": [
+      "V-Fold",
+      "C-Fold",
+      "Z-Fold",
+      "Z-Fold Half Sheet",
+      "C-Fold Multiple",
+      "Z-Fold Multiple",
+    ],
+    "deviceType": "OutputStacker",
+    "Accumulator": {
+      "status": "Empty",
+      "capacity": 3,
+    },
+  },
+}
