@@ -1,19 +1,12 @@
 /*
- * Paper Path Pulse — local ntcli bridge
+ * Paper Path Pulse
+ * Minimal NTCLI server
  *
- * Runs:
- *   ssh root@10.194.48.221 \
- *   'ntcli get Settings; echo ---; ntcli get Status; echo ---; ntcli get Supplies; echo ---; ntcli get Destination'
- *
- * Also provides:
- *   GET /api/ping
- *   GET /api/ntcli
- *
- * Start:
- *   node server.js
- *
- * Dashboard:
- *   http://localhost:8787/
+ * Fetches:
+ *   ntcli get Settings
+ *   ntcli get Status
+ *   ntcli get Supplies
+ *   ntcli get Destination
  */
 
 'use strict';
@@ -21,728 +14,504 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
-const os = require('os');
 const { execFile } = require('child_process');
 const { URL } = require('url');
+
+/* =========================================================
+   SERVER CONFIGURATION
+   ========================================================= */
 
 const PORT = Number(process.env.PORT || 8787);
 
 const DEFAULT_PRINTER_IP =
-  process.env.PRINTER_IP || '10.194.48.221';
+  process.env.PRINTER_IP || '10.194.23.205';
 
 const SSH_USER =
   process.env.SSH_USER || 'root';
 
+const SSH_PASSWORD =
+  process.env.SSH_PASSWORD || 'il2w4lilky';
+
 const DASHBOARD_FILE =
-  path.join(__dirname, 'index2_ntcli.html');
+  path.join(__dirname, 'index.html');
 
-const NTCLI_COMMAND =
-  'ntcli get Settings; echo ---; ntcli get Status; echo ---; ntcli get Supplies; echo ---; ntcli get Destination';
-
+/*
+ * These commands execute on the remote printer.
+ */
+const NTCLI_COMMAND = [
+  'echo "=== Settings ==="',
+  'ntcli get Settings',
+  'echo "=== Status ==="',
+  'ntcli get Status',
+  'echo "=== Supplies ==="',
+  'ntcli get Supplies',
+  'echo "=== Destination ==="',
+  'ntcli get Destination'
+].join('; ');
 
 /* =========================================================
-   HTTP JSON RESPONSE
+   HTTP RESPONSE HELPERS
    ========================================================= */
 
-function json(res, status, body) {
-  const payload = JSON.stringify(body);
+function sendJson(res, statusCode, data) {
+  const body = JSON.stringify(data, null, 2);
 
-  res.writeHead(status, {
+  res.writeHead(statusCode, {
     'Content-Type': 'application/json; charset=utf-8',
-    'Cache-Control': 'no-store, no-cache, must-revalidate',
-    'Pragma': 'no-cache',
+    'Content-Length': Buffer.byteLength(body),
+    'Cache-Control': 'no-store',
     'Access-Control-Allow-Origin': '*'
   });
 
-  res.end(payload);
+  res.end(body);
 }
 
+function sendHtml(res, filePath) {
+  const stream = fs.createReadStream(filePath);
+
+  stream.on('error', error => {
+    console.error('Unable to read index.html:');
+    console.error(error.stack || error);
+
+    if (!res.headersSent) {
+      sendJson(res, 500, {
+        ok: false,
+        error: 'Unable to read index.html'
+      });
+    } else {
+      res.destroy(error);
+    }
+  });
+
+  res.writeHead(200, {
+    'Content-Type': 'text/html; charset=utf-8',
+    'Cache-Control': 'no-store'
+  });
+
+  stream.pipe(res);
+}
 
 /* =========================================================
    PRINTER IP VALIDATION
    ========================================================= */
 
-function isPrivateIPv4(ip) {
-  const m =
+function isValidPrivateIPv4(ip) {
+  const match =
     /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(ip);
 
-  if (!m) return false;
-
-  const p = m.slice(1).map(Number);
-
-  if (p.some(n => n < 0 || n > 255)) {
+  if (!match) {
     return false;
   }
 
-  return (
-    p[0] === 10 ||
-    (p[0] === 172 && p[1] >= 16 && p[1] <= 31) ||
-    (p[0] === 192 && p[1] === 168)
-  );
-}
+  const parts = match
+    .slice(1)
+    .map(Number);
 
+  const hasInvalidPart =
+    parts.some(part => part < 0 || part > 255);
 
-function getIp(req, url) {
-  const ip =
-    (url.searchParams.get('ip') || DEFAULT_PRINTER_IP).trim();
-
-  if (!isPrivateIPv4(ip)) {
-    throw new Error(
-      'Printer IP must be a valid private IPv4 address'
-    );
+  if (hasInvalidPart) {
+    return false;
   }
 
-  return ip;
-}
+  const isPrivate10 =
+    parts[0] === 10;
 
+  const isPrivate172 =
+    parts[0] === 172 &&
+    parts[1] >= 16 &&
+    parts[1] <= 31;
+
+  const isPrivate192 =
+    parts[0] === 192 &&
+    parts[1] === 168;
+
+  return isPrivate10 || isPrivate172 || isPrivate192;
+}
 
 /* =========================================================
-   NTCLI JSON PARSER
+   PROCESS EXECUTION
    ========================================================= */
 
-function extractJsonObject(text) {
-  const first = text.indexOf('{');
-  const last = text.lastIndexOf('}');
-
-  if (first < 0 || last <= first) {
-    throw new Error(
-      'No JSON object found in ntcli output'
-    );
-  }
-
-  let s = text.slice(first, last + 1);
-
-  /*
-   * ntcli can contain values such as:
-   * <hex:....>
-   *
-   * Those are not required by the dashboard.
-   */
-
-  s = s.replace(/<hex:[^>]*>/g, 'null');
-
-  /*
-   * ntcli output may contain trailing commas.
-   */
-
-  s = s.replace(/,\s*([}\]])/g, '$1');
-
-  /*
-   * Tolerate other non-standard placeholders.
-   */
-
-  s = s.replace(/<[^>]*>/g, 'null');
-
-  return JSON.parse(s);
-}
-
-
-function parseNtcliOutput(stdout) {
-  const parts =
-    stdout.split(/\r?\n\s*---\s*\r?\n/);
-
-  if (parts.length < 4) {
-    throw new Error(
-      'Unexpected ntcli output: expected 4 sections'
-    );
-  }
-
-  const sections = [];
-
-  for (let i = 0; i < 4; i++) {
-    sections.push(
-      extractJsonObject(parts[i])
-    );
-  }
-
-  return {
-    settings: sections[0],
-    status: sections[1],
-    supplies: sections[2],
-    destination: sections[3]
-  };
-}
-
-
-/* =========================================================
-   SUPPLY COMPACTION
-   ========================================================= */
-
-function compactSupply(name, value) {
-  const s = value || {};
-
-  return {
-    name,
-
-    state:
-      s.Status?.state ?? null,
-
-    percentRemaining:
-      s.Status?.percentRemaining ?? null,
-
-    code:
-      s.Status?.code ?? null,
-
-    partNumber:
-      s.Attributes?.partNumber ?? null,
-
-    serialNumber:
-      s.Attributes?.serialNumber ?? null,
-
-    pagesRemaining:
-      s.Dynamic?.pagesRemaining ?? null,
-
-    daysRemaining:
-      s.Dynamic?.daysRemaining ?? null,
-
-    sideCount:
-      s.Dynamic?.sideCount ?? null
-  };
-}
-
-
-/* =========================================================
-   DESTINATION COMPACTION
-   ========================================================= */
-
-function compactDestination(name, value) {
-  const d = value || {};
-
-  const components = {};
-
-  for (const key of [
-    'StapleCartridge',
-    'StapleCartridge_2',
-    'PunchBox',
-    'Accumulator'
-  ]) {
-    if (d[key]) {
-      components[key] = {
-        status:
-          d[key].status ?? null,
-
-        capacity:
-          d[key].capacity ?? null
-      };
-    }
-  }
-
-  return {
-    name,
-
-    capacity:
-      d.capacity ?? null,
-
-    level:
-      d.level ?? null,
-
-    levelsReported:
-      d.levelsReported ?? null,
-
-    deviceType:
-      d.deviceType ?? null,
-
-    fullSensing:
-      d.fullSensing ?? null,
-
-    emptySensing:
-      d.emptySensing ?? null,
-
-    components
-  };
-}
-
-
-/* =========================================================
-   CREATE DASHBOARD-FRIENDLY NTCLI DATA
-   ========================================================= */
-
-function compactNtcli(parsed) {
-  const s =
-    parsed.settings || {};
-
-  const status =
-    parsed.status || {};
-
-  const supplies =
-    parsed.supplies || {};
-
-  const destination =
-    parsed.destination || {};
-
-  return {
-
-    /* ---------------------------------------------
-       SETTINGS
-       --------------------------------------------- */
-
-    settings: {
-      modelType:
-        s.modelType ?? null,
-
-      operatingMode:
-        s.operatingMode ?? null,
-
-      fuserMode:
-        s.fuserMode ?? null,
-
-      safeMode:
-        s.safeMode ?? null,
-
-      optionalDevicesState:
-        s.optionalDevicesState ?? null,
-
-      sfp:
-        s.sfp ?? null,
-
-      hardwareConfig: {
-        powerSupply:
-          s.HardwareConfig?.powerSupply ?? null,
-
-        mpFeederCapacity:
-          s.HardwareConfig?.mpFeederCapacity ?? null,
-
-        duplexCapability:
-          s.HardwareConfig?.duplexCapability ?? null,
-
-        tray1Capacity:
-          s.HardwareConfig?.tray1Capacity ?? null,
-
-        stdBinCapacity:
-          s.HardwareConfig?.stdBinCapacity ?? null
+function runCommand(executable, args, timeoutMs = 30000) {
+  return new Promise((resolve, reject) => {
+    execFile(
+      executable,
+      args,
+      {
+        timeout: timeoutMs,
+        maxBuffer: 16 * 1024 * 1024,
+        encoding: 'utf8'
       },
+      (error, stdout, stderr) => {
+        if (error) {
+          const message = String(
+            stderr ||
+            stdout ||
+            error.message ||
+            'Command failed'
+          ).trim();
 
-      customFeatures: {
-        maxOptionalTrays:
-          s.CustomFeatures?.maxOptionalTrays ?? null,
+          const commandError = new Error(message);
 
-        finisherConfiguration:
-          s.CustomFeatures?.finisherConfiguration ?? null
-      }
-    },
+          commandError.code = error.code;
+          commandError.signal = error.signal;
+          commandError.killed = error.killed;
 
-
-    /* ---------------------------------------------
-       STATUS
-       --------------------------------------------- */
-
-    status: {
-
-      errors:
-        status.Errors || {},
-
-      powerState:
-        status.PowerState || {},
-
-      printing:
-        status.Printing || {},
-
-      version:
-        status.Version || {},
-
-      environment:
-        status.Environment || {},
-
-      calibration:
-        status.Calibration || {},
-
-      currentMode:
-        status.currentMode ?? null,
-
-      persistentBootMode:
-        status.persistentBootMode ?? null,
-
-      printReady:
-        status.printReady ?? null,
-
-      sideCount:
-        status.sideCount ?? null,
-
-      sideCountPermanent:
-        status.sideCountPermanent ?? null,
-
-      technologyIsColor:
-        status.technologyIsColor ?? null,
-
-      colorPrintingEnabled:
-        status.colorPrintingEnabled ?? null,
-
-      currentTime:
-        status.currentTime ?? null,
-
-      maxSpeed:
-        status.maxSpeed ?? null,
-
-      safeMode:
-        status.safeMode ?? null
-    },
-
-
-    /* ---------------------------------------------
-       SUPPLIES
-       --------------------------------------------- */
-
-    supplies:
-      Object.entries(supplies)
-        .map(([name, value]) =>
-          compactSupply(name, value)
-        ),
-
-
-    /* ---------------------------------------------
-       DESTINATION
-       --------------------------------------------- */
-
-    destination:
-      Object.entries(destination)
-        .map(([name, value]) =>
-          compactDestination(name, value)
-        )
-  };
-}
-
-
-/* =========================================================
-   COMMAND EXECUTION
-   ========================================================= */
-
-function runCommand(
-  file,
-  args,
-  timeoutMs = 20000
-) {
-  return new Promise(
-    (resolve, reject) => {
-
-      execFile(
-        file,
-        args,
-        {
-          timeout: timeoutMs,
-          windowsHide: true,
-
-          maxBuffer:
-            4 * 1024 * 1024
-        },
-
-        (error, stdout, stderr) => {
-
-          if (error) {
-
-            const detail =
-              (
-                stderr ||
-                stdout ||
-                error.message ||
-                ''
-              ).trim();
-
-            reject(
-              new Error(
-                detail || 'Command failed'
-              )
-            );
-
-            return;
-          }
-
-          resolve(
-            (stdout || '').toString()
-          );
+          reject(commandError);
+          return;
         }
-      );
-    }
-  );
+
+        resolve(String(stdout || ''));
+      }
+    );
+  });
 }
 
-
 /* =========================================================
-   QUERY PRINTER
+   NTCLI OUTPUT PARSER
    ========================================================= */
 
-async function queryNtcli(ip) {
+function parseValue(text) {
+  const trimmedText = String(text || '').trim();
 
-  const stdout =
-    await runCommand(
+  if (!trimmedText) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(trimmedText);
+  } catch (error) {
+    return trimmedText;
+  }
+}
+
+function parseSections(stdout) {
+  const sectionNames = [
+    'Settings',
+    'Status',
+    'Supplies',
+    'Destination'
+  ];
+
+  const result = {};
+
+  for (
+    let index = 0;
+    index < sectionNames.length;
+    index += 1
+  ) {
+    const sectionName =
+      sectionNames[index];
+
+    const startMarker =
+      `=== ${sectionName} ===`;
+
+    const nextSectionName =
+      sectionNames[index + 1];
+
+    const endMarker =
+      nextSectionName
+        ? `=== ${nextSectionName} ===`
+        : null;
+
+    const markerStart =
+      stdout.indexOf(startMarker);
+
+    const propertyName =
+      sectionName.toLowerCase();
+
+    if (markerStart === -1) {
+      result[propertyName] = null;
+      continue;
+    }
+
+    const contentStart =
+      markerStart + startMarker.length;
+
+    const detectedEnd =
+      endMarker
+        ? stdout.indexOf(endMarker, contentStart)
+        : stdout.length;
+
+    /*
+     * Use a separate constant instead of reassigning detectedEnd.
+     * This avoids "Assignment to constant variable."
+     */
+    const contentEnd =
+      detectedEnd === -1
+        ? stdout.length
+        : detectedEnd;
+
+    const sectionText =
+      stdout
+        .slice(contentStart, contentEnd)
+        .trim();
+
+    result[propertyName] =
+      parseValue(sectionText);
+  }
+
+  return result;
+}
+
+/* =========================================================
+   FETCH NTCLI DATA
+   ========================================================= */
+
+async function fetchNtcli(printerIp) {
+  const sshOptions = [
+    '-o',
+    'StrictHostKeyChecking=no',
+
+    '-o',
+    'UserKnownHostsFile=/dev/null',
+
+    '-o',
+    'ConnectTimeout=7',
+
+    '-o',
+    'ServerAliveInterval=5',
+
+    '-o',
+    'ServerAliveCountMax=2'
+  ];
+
+  const sshDestination =
+    `${SSH_USER}@${printerIp}`;
+
+  let stdout;
+
+  if (SSH_PASSWORD) {
+    /*
+     * Password authentication using sshpass.
+     */
+    const sshpassArgs = [
+      '-p',
+      SSH_PASSWORD,
       'ssh',
-      [
-        '-o',
-        'BatchMode=yes',
+      ...sshOptions,
+      sshDestination,
+      NTCLI_COMMAND
+    ];
 
-        '-o',
-        'ConnectTimeout=7',
-
-        `${SSH_USER}@${ip}`,
-
-        NTCLI_COMMAND
-      ]
+    stdout = await runCommand(
+      'sshpass',
+      sshpassArgs
     );
+  } else {
+    /*
+     * SSH key authentication.
+     */
+    const sshArgs = [
+      '-o',
+      'BatchMode=yes',
+      ...sshOptions,
+      sshDestination,
+      NTCLI_COMMAND
+    ];
+
+    stdout = await runCommand(
+      'ssh',
+      sshArgs
+    );
+  }
+
+  const parsedData =
+    parseSections(stdout);
 
   return {
     ok: true,
-
-    ip,
-
-    fetchedAt:
-      new Date().toISOString(),
-
-    ...compactNtcli(
-      parseNtcliOutput(stdout)
-    )
+    ip: printerIp,
+    fetchedAt: new Date().toISOString(),
+    settings: parsedData.settings,
+    status: parsedData.status,
+    supplies: parsedData.supplies,
+    destination: parsedData.destination
   };
 }
-
-
-/* =========================================================
-   PING PRINTER
-   ========================================================= */
-
-async function pingPrinter(ip) {
-
-  const isWin =
-    os.platform() === 'win32';
-
-  const args = isWin
-
-    ? [
-        '-n',
-        '1',
-
-        '-w',
-        '1500',
-
-        ip
-      ]
-
-    : [
-        '-c',
-        '1',
-
-        '-W',
-        '2',
-
-        ip
-      ];
-
-  try {
-
-    const stdout =
-      await runCommand(
-        'ping',
-        args,
-        5000
-      );
-
-    return {
-
-      ok: true,
-
-      reachable: true,
-
-      ip,
-
-      checkedAt:
-        new Date().toISOString(),
-
-      output:
-        stdout.trim().slice(0, 800)
-    };
-
-  } catch (error) {
-
-    return {
-
-      ok: true,
-
-      reachable: false,
-
-      ip,
-
-      checkedAt:
-        new Date().toISOString(),
-
-      error:
-        error.message
-    };
-  }
-}
-
 
 /* =========================================================
    HTTP SERVER
    ========================================================= */
 
-const server =
-  http.createServer(
-    async (req, res) => {
+const server = http.createServer(
+  async (req, res) => {
+    const requestUrl = new URL(
+      req.url,
+      `http://${req.headers.host || 'localhost'}`
+    );
 
-      const url =
-        new URL(
-          req.url,
-          `http://${req.headers.host || 'localhost'}`
-        );
+    /*
+     * CORS preflight request.
+     */
+    if (req.method === 'OPTIONS') {
+      res.writeHead(204, {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods':
+          'GET, OPTIONS',
+        'Access-Control-Allow-Headers':
+          'Content-Type'
+      });
 
+      res.end();
+      return;
+    }
 
-      /* ---------------------------------------------
-         CORS PREFLIGHT
-         --------------------------------------------- */
+    /*
+     * Health-check endpoint.
+     */
+    if (
+      req.method === 'GET' &&
+      requestUrl.pathname === '/api/health'
+    ) {
+      sendJson(res, 200, {
+        ok: true,
+        service: 'Paper Path Pulse',
+        printerIp: DEFAULT_PRINTER_IP,
+        sshUser: SSH_USER,
+        authentication:
+          SSH_PASSWORD
+            ? 'sshpass password'
+            : 'SSH key',
+        timestamp: new Date().toISOString()
+      });
 
-      if (req.method === 'OPTIONS') {
+      return;
+    }
 
-        res.writeHead(
-          204,
-          {
-            'Access-Control-Allow-Origin': '*',
+    /*
+     * NTCLI endpoint.
+     *
+     * Default:
+     *   /api/ntcli
+     *
+     * Custom private IP:
+     *   /api/ntcli?ip=10.194.23.205
+     */
+    if (
+      req.method === 'GET' &&
+      requestUrl.pathname === '/api/ntcli'
+    ) {
+      const requestedIp =
+        requestUrl.searchParams.get('ip');
 
-            'Access-Control-Allow-Methods':
-              'GET, OPTIONS',
+      const printerIp =
+        String(
+          requestedIp || DEFAULT_PRINTER_IP
+        ).trim();
 
-            'Access-Control-Allow-Headers':
-              'Content-Type'
-          }
-        );
+      if (!isValidPrivateIPv4(printerIp)) {
+        sendJson(res, 400, {
+          ok: false,
+          error:
+            'Printer IP must be a valid private IPv4 address'
+        });
 
-        return res.end();
+        return;
       }
 
+      console.log(
+        `[${new Date().toISOString()}] ` +
+        `Fetching NTCLI data from ${printerIp}`
+      );
 
       try {
+        const data =
+          await fetchNtcli(printerIp);
 
-        /* -------------------------------------------
-           NTCLI ENDPOINT
-           ------------------------------------------- */
-
-        if (url.pathname === '/api/ntcli') {
-
-          const ip =
-            getIp(req, url);
-
-          try {
-
-            const result =
-              await queryNtcli(ip);
-
-            return json(
-              res,
-              200,
-              result
-            );
-
-          } catch (error) {
-
-            return json(
-              res,
-              502,
-              {
-                ok: false,
-
-                ip,
-
-                fetchedAt:
-                  new Date().toISOString(),
-
-                error:
-                  error.message
-              }
-            );
-          }
-        }
-
-
-        /* -------------------------------------------
-           PING ENDPOINT
-           ------------------------------------------- */
-
-        if (url.pathname === '/api/ping') {
-
-          const ip =
-            getIp(req, url);
-
-          return json(
-            res,
-            200,
-            await pingPrinter(ip)
-          );
-        }
-
-
-        /* -------------------------------------------
-           DASHBOARD
-           ------------------------------------------- */
-
-        if (
-          url.pathname === '/' ||
-          url.pathname === '/index2.html'
-        ) {
-
-          if (
-            !fs.existsSync(
-              DASHBOARD_FILE
-            )
-          ) {
-
-            return json(
-              res,
-              500,
-              {
-                ok: false,
-
-                error:
-                  'index2_ntcli.html not found beside server.js'
-              }
-            );
-          }
-
-          res.writeHead(
-            200,
-            {
-              'Content-Type':
-                'text/html; charset=utf-8',
-
-              'Cache-Control':
-                'no-store'
-            }
-          );
-
-          return fs
-            .createReadStream(
-              DASHBOARD_FILE
-            )
-            .pipe(res);
-        }
-
-
-        /* -------------------------------------------
-           404
-           ------------------------------------------- */
-
-        res.writeHead(
-          404,
-          {
-            'Content-Type':
-              'text/plain; charset=utf-8'
-          }
+        console.log(
+          `[${new Date().toISOString()}] ` +
+          `NTCLI fetch completed for ${printerIp}`
         );
 
-        res.end('Not found');
-
+        sendJson(res, 200, data);
       } catch (error) {
-
-        return json(
-          res,
-          400,
-          {
-            ok: false,
-
-            error:
-              error.message ||
-              'Bad request'
-          }
+        console.error(
+          `[${new Date().toISOString()}] ` +
+          `NTCLI fetch failed for ${printerIp}`
         );
-      }
-    }
-  );
 
+        console.error(
+          error.stack || error
+        );
+
+        sendJson(res, 502, {
+          ok: false,
+          ip: printerIp,
+          fetchedAt: new Date().toISOString(),
+          error:
+            error.message ||
+            'Failed to fetch printer data'
+        });
+      }
+
+      return;
+    }
+
+    /*
+     * Serve the dashboard.
+     */
+    if (
+      req.method === 'GET' &&
+      (
+        requestUrl.pathname === '/' ||
+        requestUrl.pathname === '/index.html'
+      )
+    ) {
+      if (!fs.existsSync(DASHBOARD_FILE)) {
+        sendJson(res, 500, {
+          ok: false,
+          error:
+            'index.html was not found beside server.js'
+        });
+
+        return;
+      }
+
+      sendHtml(res, DASHBOARD_FILE);
+      return;
+    }
+
+    /*
+     * Unknown endpoint.
+     */
+    sendJson(res, 404, {
+      ok: false,
+      error: 'Not found',
+      availableEndpoints: [
+        '/',
+        '/api/health',
+        '/api/ntcli'
+      ]
+    });
+  }
+);
+
+/* =========================================================
+   SERVER ERROR HANDLING
+   ========================================================= */
+
+server.on('error', error => {
+  if (error.code === 'EADDRINUSE') {
+    console.error(
+      `Port ${PORT} is already being used.`
+    );
+
+    console.error(
+      `Stop the existing server or use another port:`
+    );
+
+    console.error(
+      `PORT=8788 /snap/bin/node server.js`
+    );
+  } else {
+    console.error('Server error:');
+    console.error(error.stack || error);
+  }
+
+  process.exit(1);
+});
 
 /* =========================================================
    START SERVER
@@ -750,11 +519,21 @@ const server =
 
 server.listen(
   PORT,
-
+  '127.0.0.1',
   () => {
+    console.log(
+      `Paper Path Pulse listening on ` +
+      `http://localhost:${PORT}/`
+    );
 
     console.log(
-      `Paper Path Pulse listening on http://localhost:${PORT}/`
+      `NTCLI endpoint: ` +
+      `http://localhost:${PORT}/api/ntcli`
+    );
+
+    console.log(
+      `Health endpoint: ` +
+      `http://localhost:${PORT}/api/health`
     );
 
     console.log(
@@ -763,6 +542,14 @@ server.listen(
 
     console.log(
       `SSH user: ${SSH_USER}`
+    );
+
+    console.log(
+      `Authentication: ${
+        SSH_PASSWORD
+          ? 'sshpass password'
+          : 'SSH key'
+      }`
     );
   }
 );
