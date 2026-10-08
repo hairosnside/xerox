@@ -1,0 +1,13 @@
+{
+  "printerIp": "10.194.23.205",
+  "sshUser": "root",
+  "listenHost": "127.0.0.1",
+  "port": 8787,
+  "liveLogPath": "C:\\Users\\Jairo\\Desktop\\FINAL P3\\10.194.23.205___2026_10_08__16_23_05.log",
+  "logPollMs": 1000,
+  "ntcliPollMs": 30000,
+  "paperPathFilter": "(ppcmd|PPort|SLPQ|pickpage|ImagePositionError|imagepositionerror|qdmg|staging|Page\\s+ID|PageId|PgSup\\s+Page)",
+  "maxPages": 2000,
+  "maxEvents": 12000,
+  "theme": "dark"
+}
