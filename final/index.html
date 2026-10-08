@@ -1,0 +1,505 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>P3 — Paper Path Pulse</title>
+<style>
+:root{
+  --bg:#f7f7f7;--surface:#fff;--surface2:#f2f2f2;--text:#161616;--muted:#6f6f6f;
+  --border:#dedede;--red:#c8102e;--red-dark:#9f0d25;--green:#1b7f4c;--amber:#b36b00;
+  --shadow:0 8px 22px rgba(0,0,0,.06);--radius:14px;--sidebar:238px;
+}
+[data-theme="dark"]{
+  --bg:#111;--surface:#181818;--surface2:#202020;--text:#f4f4f4;--muted:#aaa;
+  --border:#333;--red:#e51e3b;--red-dark:#b9122b;--green:#43c982;--amber:#e8a842;
+  --shadow:0 12px 30px rgba(0,0,0,.28);
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer}
+.app{display:grid;grid-template-columns:var(--sidebar) 1fr;min-height:100vh}
+.sidebar{background:var(--surface);border-right:1px solid var(--border);padding:22px 16px;position:sticky;top:0;height:100vh}
+.brand{display:flex;gap:11px;align-items:center;padding:5px 8px 26px}
+.brand-mark{width:36px;height:36px;border:2px solid var(--red);display:grid;place-items:center;color:var(--red);font-weight:900;border-radius:9px}
+.brand h1{font-size:15px;line-height:1.1;margin:0;letter-spacing:.08em}
+.brand small{display:block;color:var(--muted);font-weight:600;margin-top:4px;font-size:10px;letter-spacing:.05em}
+.nav{display:grid;gap:6px}
+.nav button{display:flex;gap:10px;align-items:center;border:1px solid transparent;background:transparent;color:var(--muted);padding:11px 12px;border-radius:10px;text-align:left}
+.nav button.active{background:rgba(200,16,46,.08);border-color:rgba(200,16,46,.18);color:var(--red);font-weight:700}
+.side-footer{position:absolute;bottom:18px;left:16px;right:16px}
+.sys{padding:12px;border:1px solid var(--border);border-radius:10px;background:var(--surface2);font-size:11px}
+.sys-row{display:flex;justify-content:space-between;gap:8px;padding:4px 0}.sys-row span:first-child{color:var(--muted)}
+main{min-width:0}.topbar{height:72px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;padding:0 28px;position:sticky;top:0;z-index:20}
+.top-title{font-weight:800;letter-spacing:.02em}.top-sub{font-size:11px;color:var(--muted);margin-top:3px}
+.live-pill{display:flex;align-items:center;gap:8px;border:1px solid var(--border);background:var(--surface);padding:8px 11px;border-radius:999px;font-size:11px;font-weight:800}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--muted)}.dot.live{background:var(--green);box-shadow:0 0 0 0 rgba(27,127,76,.5);animation:pulse 1.8s infinite}
+@keyframes pulse{70%{box-shadow:0 0 0 7px rgba(27,127,76,0)}100%{box-shadow:0 0 0 0 rgba(27,127,76,0)}}
+.view{display:none;padding:24px 28px}.view.active{display:block}
+.section-head{display:flex;justify-content:space-between;align-items:flex-end;margin:0 0 16px;gap:14px}.section-head h2{margin:0;font-size:18px}.section-head p{margin:4px 0 0;color:var(--muted);font-size:12px}
+.kpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px;margin-bottom:14px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow)}
+.kpi{padding:15px 16px;min-height:98px}.kpi .label{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:800}.kpi .value{margin-top:10px;font-size:21px;font-weight:850;letter-spacing:-.03em}.kpi .meta{margin-top:6px;font-size:10px;color:var(--muted)}
+.grid-main{display:grid;grid-template-columns:1.75fr .95fr;gap:14px;margin-bottom:14px}.grid-sub{display:grid;grid-template-columns:1.15fr .85fr;gap:14px}
+.panel{padding:16px}.panel-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px}.panel-head h3{font-size:12px;text-transform:uppercase;letter-spacing:.08em;margin:0}.panel-head .actions{display:flex;gap:6px;align-items:center}
+.tiny{font-size:10px;color:var(--muted)}
+.btn{background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:7px 10px;color:var(--text);font-size:11px;font-weight:700}.btn:hover{border-color:#bdbdbd}.btn.red{background:var(--red);border-color:var(--red);color:#fff}.btn.ghost{background:transparent}.btn.icon{padding:7px 9px}
+.page-history-bar{display:flex;align-items:center;gap:7px;margin:0 0 10px;flex-wrap:wrap}.page-history{display:flex;gap:6px;overflow:auto;padding:2px;scrollbar-width:thin}.page-chip{border:1px solid var(--border);background:var(--surface);color:var(--muted);padding:6px 9px;border-radius:8px;font:700 10px ui-monospace,monospace;white-space:nowrap;cursor:pointer}.page-chip:hover{border-color:#bdbdbd;color:var(--text)}.page-chip.active{background:rgba(200,16,46,.08);border-color:rgba(200,16,46,.25);color:var(--red)}.timeline-history{max-height:430px;overflow:auto;padding-right:4px;scroll-behavior:smooth}.history-page{padding:11px 0 13px;border-top:1px solid var(--border)}.history-page:first-child{border-top:0}.history-page-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:7px;cursor:pointer}.history-page-head b{font:800 11px ui-monospace,monospace}.history-page-head .history-meta{font-size:9px;color:var(--muted)}.history-page.active .history-page-head b{color:var(--red)}.timeline-wrap{overflow:auto}.timeline{min-width:720px}.time-grid{display:grid;grid-template-columns:118px 1fr;gap:0}.time-head{grid-column:2;position:relative;height:30px;border-bottom:1px solid var(--border)}.time-label{font-size:10px;color:var(--muted);padding:7px 8px 0}.axis-tick{position:absolute;top:0;height:100%;border-left:1px dashed var(--border);font-size:9px;color:var(--muted);padding:3px 0 0 5px}.lane{display:grid;grid-template-columns:118px 1fr;align-items:center;min-height:46px}.lane-name{font-size:11px;color:var(--muted);font-weight:700;padding-right:10px}.lane-track{position:relative;height:28px;border-bottom:1px solid var(--border)}.event-dot{position:absolute;top:7px;width:14px;height:14px;border-radius:50%;background:var(--red);border:3px solid var(--surface);box-shadow:0 0 0 1px var(--red);transform:translateX(-50%);z-index:2}.event-dot.nominal{background:var(--green);box-shadow:0 0 0 1px var(--green)}.event-dot.early{background:#8f5a9f;box-shadow:0 0 0 1px #8f5a9f}.event-dot.unknown{background:var(--muted);box-shadow:0 0 0 1px var(--muted)}.startline,.endline{position:absolute;top:0;height:100%;width:2px;background:var(--red);opacity:.28}.endline{background:var(--text);opacity:.18}
+.badge{display:inline-flex;align-items:center;gap:5px;padding:3px 7px;border-radius:999px;font-size:9px;font-weight:900;letter-spacing:.05em;border:1px solid var(--border);background:var(--surface2)}.badge.early{color:#754381;background:rgba(117,67,129,.08);border-color:rgba(117,67,129,.16)}.badge.late{color:var(--red);background:rgba(200,16,46,.08);border-color:rgba(200,16,46,.16)}.badge.nominal{color:var(--green);background:rgba(27,127,76,.08);border-color:rgba(27,127,76,.16)}.badge.warn{color:var(--amber)}
+.ipe-canvas-wrap{height:320px;position:relative}.ipe-canvas{width:100%;height:100%;display:block}.tooltip{position:fixed;display:none;z-index:100;background:#111;color:#fff;padding:9px 11px;border-radius:8px;font-size:10px;line-height:1.45;box-shadow:0 10px 25px rgba(0,0,0,.2);pointer-events:none;max-width:280px}
+.mini-table{width:100%;border-collapse:collapse;font-size:10px}.mini-table th{color:var(--muted);font-size:9px;text-transform:uppercase;letter-spacing:.06em;text-align:left;padding:6px;border-bottom:1px solid var(--border)}.mini-table td{padding:8px 6px;border-bottom:1px solid var(--border)}
+.health-list{display:grid;gap:7px;max-height:290px;overflow:auto}.health-item{padding:9px;border:1px solid var(--border);border-left:3px solid var(--red);border-radius:9px;background:var(--surface2)}.health-item.warn{border-left-color:var(--amber)}.health-item.info{border-left-color:var(--muted)}.health-item .time{font-size:9px;color:var(--muted);margin-bottom:4px}.health-item .raw{font-size:10px;line-height:1.4}
+.analyzer-drop{border:1.5px dashed #b9b9b9;border-radius:16px;padding:32px;text-align:center;background:var(--surface);transition:.16s}.analyzer-drop.drag{border-color:var(--red);background:rgba(200,16,46,.04);transform:translateY(-1px)}.drop-title{font-size:14px;font-weight:850}.drop-sub{font-size:11px;color:var(--muted);margin:6px 0 16px}.file-input{display:none}
+.stats-strip{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:9px;margin:14px 0}.statbox{padding:11px;background:var(--surface);border:1px solid var(--border);border-radius:11px}.statbox label{display:block;font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}.statbox b{display:block;margin-top:7px;font-size:15px}
+.filterbar{display:grid;grid-template-columns:1fr auto auto auto auto;gap:8px;margin:14px 0}.control{background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:9px 10px;color:var(--text);min-width:0}.control.small{font-size:11px}
+.analyzer-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:14px}.pages-table{max-height:550px;overflow:auto}.page-row{display:grid;grid-template-columns:82px 75px 1fr 74px;gap:8px;align-items:center;padding:10px 8px;border-bottom:1px solid var(--border);font-size:10px;cursor:pointer}.page-row:hover{background:var(--surface2)}.page-row.active{background:rgba(200,16,46,.05)}.page-id{font-weight:850}.stage-dots{display:flex;gap:4px;align-items:center}.stage-dot{width:8px;height:8px;border-radius:50%;background:var(--border)}.stage-dot.early{background:#8f5a9f}.stage-dot.late{background:var(--red)}.stage-dot.nominal{background:var(--green)}
+.raw-box{height:430px;overflow:auto;background:#111;color:#eee;border-radius:11px;padding:12px;font:10px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre-wrap;word-break:break-word}.signal-list{height:430px;overflow:auto}.signal{padding:8px 9px;border-bottom:1px solid var(--border);font-size:10px}.signal .meta{color:var(--muted);font-size:9px;margin-bottom:3px}
+.drawer{position:fixed;inset:0;display:none;z-index:60}.drawer.show{display:block}.drawer-back{position:absolute;inset:0;background:rgba(0,0,0,.35)}.drawer-panel{position:absolute;right:0;top:0;bottom:0;width:min(520px,92vw);background:var(--surface);border-left:1px solid var(--border);box-shadow:-16px 0 38px rgba(0,0,0,.18);padding:20px;overflow:auto}.drawer-head{display:flex;justify-content:space-between;align-items:center}.drawer-head h2{margin:0;font-size:20px}.drawer-sub{font-size:11px;color:var(--muted);margin:4px 0 16px}.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:14px}.detail{padding:10px;border:1px solid var(--border);border-radius:10px;background:var(--surface2)}.detail label{display:block;font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}.detail b{display:block;margin-top:5px;font-size:12px}.stage-list{display:grid;gap:7px}.stage-card{display:grid;grid-template-columns:115px 1fr auto;align-items:center;gap:8px;padding:9px 10px;border:1px solid var(--border);border-radius:9px}.stage-card .stage{font-weight:750;font-size:10px}.stage-card .reading{font-size:11px}.raw-detail{background:#111;color:#eee;border-radius:8px;padding:10px;font:9px/1.5 ui-monospace,monospace;white-space:pre-wrap;word-break:break-word}
+.settings-grid{max-width:780px;display:grid;gap:12px}.setting-card{padding:16px}.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.field label{display:block;font-size:10px;font-weight:800;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em}.field input,.field select,.field textarea{width:100%;padding:10px 11px;border:1px solid var(--border);border-radius:9px;background:var(--surface);color:var(--text)}.field textarea{min-height:88px;resize:vertical;font-family:ui-monospace,monospace;font-size:10px}.field.full{grid-column:1/-1}.setting-note{font-size:10px;color:var(--muted);line-height:1.5;margin-top:8px}.actions-row{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
+.empty{padding:24px;text-align:center;color:var(--muted);font-size:11px}.muted{color:var(--muted)}
+.row{display:flex;align-items:center;gap:8px}.grow{flex:1}.mono{font-family:ui-monospace,monospace}.right{text-align:right}
+@media (max-width:1150px){.kpis{grid-template-columns:repeat(3,1fr)}.grid-main,.grid-sub,.analyzer-grid{grid-template-columns:1fr}.stats-strip{grid-template-columns:repeat(3,1fr)}}
+@media (max-width:760px){:root{--sidebar:0}.app{display:block}.sidebar{height:auto;position:static;border-right:0;border-bottom:1px solid var(--border);padding:10px}.brand{padding:5px 4px 10px}.side-footer{display:none}.nav{display:flex;overflow:auto}.nav button{min-width:122px}.topbar{padding:0 14px}.view{padding:15px}.kpis{grid-template-columns:repeat(2,1fr)}.stats-strip{grid-template-columns:repeat(2,1fr)}.form-grid{grid-template-columns:1fr}.filterbar{grid-template-columns:1fr 1fr}.filterbar .growline{grid-column:1/-1}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">P3</div>
+      <div><h1>PAPER PATH<br>PULSE</h1><small>DIAGNOSTICS CONSOLE</small></div>
+    </div>
+    <nav class="nav">
+      <button data-view="dashboard" class="active">◉ <span>Dashboard</span></button>
+      <button data-view="analyzer">⌁ <span>Log Analyzer</span></button>
+      <button data-view="settings">⚙ <span>Settings</span></button>
+    </nav>
+    <div class="side-footer">
+      <div class="sys">
+        <div class="sys-row"><span>Printer</span><b id="sidePrinter">—</b></div>
+        <div class="sys-row"><span>Log</span><b id="sideLog">OFFLINE</b></div>
+        <div class="sys-row"><span>NTCLI</span><b id="sideNtcli">OFFLINE</b></div>
+      </div>
+    </div>
+  </aside>
+
+  <main>
+    <header class="topbar">
+      <div>
+        <div class="top-title" id="pageTitle">P3 — PAPER PATH PULSE</div>
+        <div class="top-sub" id="topSub">Real-time page-path observability · evidence first</div>
+      </div>
+      <div class="live-pill"><span id="liveDot" class="dot"></span><span id="liveText">OFFLINE</span><span class="muted">·</span><span id="lastUpdate">—</span></div>
+    </header>
+
+    <section id="view-dashboard" class="view active">
+      <div class="section-head">
+        <div><h2>Operational dashboard</h2><p>Only signals with a traceable source line are promoted into the primary view.</p></div>
+        <div class="row"><button class="btn" onclick="refreshLive()">Refresh</button><button class="btn red" onclick="openSettings()">Configure</button></div>
+      </div>
+
+      <div class="kpis">
+        <div class="card kpi"><div class="label">Printer state</div><div class="value" id="kPrinter">—</div><div class="meta" id="kPrinterMeta">NTCLI</div></div>
+        <div class="card kpi"><div class="label">Current page</div><div class="value mono" id="kPage">—</div><div class="meta" id="kPageMeta">Page ID / pgid</div></div>
+        <div class="card kpi"><div class="label">Current stage</div><div class="value" id="kStage">—</div><div class="meta">Latest correlated event</div></div>
+        <div class="card kpi"><div class="label">Latest IPE</div><div class="value" id="kIpe">—</div><div class="meta" id="kIpeMeta">EARLY / NOMINAL / LATE</div></div>
+        <div class="card kpi"><div class="label">QDMG</div><div class="value" id="kQdmg">—</div><div class="meta">Raw transaction preserved</div></div>
+        <div class="card kpi"><div class="label">Health</div><div class="value" id="kHealth">—</div><div class="meta" id="kHealthMeta">Relevant health events</div></div>
+      </div>
+
+      <div class="grid-main">
+        <div class="card panel">
+          <div class="panel-head">
+            <h3>Smart page timeline</h3>
+            <div class="actions"><button class="btn icon" onclick="previousPage()">← Previous</button><span class="tiny" id="timelinePage">No selected page</span><button class="btn icon" onclick="nextPage()">Next →</button></div>
+          </div>
+          <div class="page-history-bar"><span class="tiny">Page history</span><div id="pageHistory" class="page-history"></div></div>
+          <div class="timeline-wrap"><div id="timeline" class="timeline"></div></div>
+          <div id="timelineHistory" class="timeline-history"></div>
+        </div>
+
+        <div class="card panel">
+          <div class="panel-head"><h3>Selected page</h3><button class="btn" id="selectedPageBtn" onclick="openSelectedPage()">Open</button></div>
+          <div id="pageSummary" class="empty">Select a page event or page row to inspect the complete lifecycle.</div>
+        </div>
+      </div>
+
+      <div class="card panel" style="margin-bottom:14px">
+        <div class="panel-head">
+          <h3>Image Position Error trend</h3>
+          <div class="actions">
+            <select id="trendMode" class="control small" onchange="renderTrend()"><option value="page">By Page ID</option><option value="time">By time</option><option value="stage">By stage</option><option value="selected">Selected page</option></select>
+            <button class="btn icon" onclick="resetTrend()">Reset</button>
+          </div>
+        </div>
+        <div class="ipe-canvas-wrap"><canvas id="ipeCanvas" class="ipe-canvas"></canvas></div>
+        <div class="row" style="justify-content:space-between;margin-top:8px"><span class="tiny">Negative = EARLY · 0 = NOMINAL · Positive = LATE</span><div class="row" id="stageLegend"></div></div>
+      </div>
+
+      <div class="grid-sub">
+        <div class="card panel">
+          <div class="panel-head"><h3>SLPQ / QDMG</h3><span class="tiny" id="selectedPgid">No page selected</span></div>
+          <div id="slpqPanel" class="empty">Select a page with queue activity.</div>
+        </div>
+        <div class="card panel">
+          <div class="panel-head"><h3>Health strip</h3><span class="tiny" id="healthCount">0 events</span></div>
+          <div id="healthList" class="health-list"><div class="empty">No relevant health events yet.</div></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="view-analyzer" class="view">
+      <div class="section-head"><div><h2>Log Analyzer</h2><p>Large raw logs are parsed off the main thread and remain immutable.</p></div><div class="row"><button class="btn" onclick="document.getElementById('filePicker').click()">Choose File</button><button class="btn" onclick="exportAnalysis()">Export JSON</button></div></div>
+
+      <div id="dropZone" class="analyzer-drop">
+        <div class="drop-title">DROP RAW PRINTER LOG HERE</div>
+        <div class="drop-sub">or choose a file · recommended for logs from tens of megabytes</div>
+        <button class="btn red" onclick="document.getElementById('filePicker').click()">Analyze Log</button>
+        <input id="filePicker" class="file-input" type="file" accept=".log,.txt,.out,.trace,.txt">
+        <div id="parseStatus" class="tiny" style="margin-top:14px">Waiting for a file.</div>
+      </div>
+
+      <div class="stats-strip">
+        <div class="statbox"><label>File</label><b id="aFile">—</b></div>
+        <div class="statbox"><label>Size</label><b id="aSize">—</b></div>
+        <div class="statbox"><label>Lines</label><b id="aLines">—</b></div>
+        <div class="statbox"><label>Matched</label><b id="aMatched">—</b></div>
+        <div class="statbox"><label>Pages</label><b id="aPages">—</b></div>
+        <div class="statbox"><label>Parse</label><b id="aParse">—</b></div>
+      </div>
+
+      <div class="filterbar">
+        <input id="aSearch" class="control growline" placeholder="Search filtered signals, source lines, page IDs…" oninput="renderAnalyzerList()">
+        <select id="aPageFilter" class="control small" onchange="renderAnalyzerList()"><option value="">All pages</option></select>
+        <select id="aStageFilter" class="control small" onchange="renderAnalyzerList()"><option value="">All stages</option><option value="trayPassThru">Tray Pass Thru</option><option value="printerEntry">Printer Entry</option><option value="s1">S1 Sensor</option><option value="bumpNip">Bump Nip</option><option value="bumpExit">Bump Exit</option><option value="xfer2">2ndXfer</option></select>
+        <select id="aStatusFilter" class="control small" onchange="renderAnalyzerList()"><option value="">All IPE</option><option value="EARLY">Early only</option><option value="NOMINAL">Nominal only</option><option value="LATE">Late only</option></select>
+      </div>
+
+      <div class="analyzer-grid">
+        <div class="card panel">
+          <div class="panel-head"><h3>Page correlation</h3><span class="tiny" id="pageListCount">0 pages</span></div>
+          <div id="pageList" class="pages-table"><div class="empty">Analyze a log to populate page records.</div></div>
+        </div>
+        <div class="card panel">
+          <div class="panel-head"><h3>Selected filtered signals</h3><span class="tiny" id="signalListCount">0 signals</span></div>
+          <div id="signalList" class="signal-list"><div class="empty">No analysis loaded.</div></div>
+        </div>
+      </div>
+
+      <div class="grid-sub" style="margin-top:14px">
+        <div class="card panel"><div class="panel-head"><h3>Raw log / selected record</h3><span class="tiny">Original text preserved</span></div><pre id="rawViewer" class="raw-box">No record selected.</pre></div>
+        <div class="card panel"><div class="panel-head"><h3>Selected page timeline</h3><span class="tiny">Stage evidence</span></div><div id="analyzerTimeline" class="timeline-wrap"></div></div>
+      </div>
+    </section>
+
+    <section id="view-settings" class="view">
+      <div class="section-head"><div><h2>Settings</h2><p>Printer identity and server listener are deliberately separate.</p></div></div>
+      <div class="settings-grid">
+        <div class="card setting-card">
+          <div class="panel-head"><h3>Printer connection</h3><span class="tiny">NTCLI adapter</span></div>
+          <div class="form-grid">
+            <div class="field"><label>Printer IP / Host</label><input id="sPrinterIp" placeholder="10.194.23.205"></div>
+            <div class="field"><label>SSH User</label><input id="sSshUser" placeholder="root"></div>
+          </div>
+          <div class="setting-note">Credentials are not persisted by the browser. Set <span class="mono">SSH_PASSWORD</span> in the server environment for password authentication, or use an SSH key.</div>
+        </div>
+        <div class="card setting-card">
+          <div class="panel-head"><h3>Server listener</h3><span class="tiny">HTTP + WebSocket</span></div>
+          <div class="form-grid">
+            <div class="field"><label>Listen IP / Host</label><input id="sListenHost" placeholder="127.0.0.1"></div>
+            <div class="field"><label>Port</label><input id="sPort" type="number" min="1" max="65535" placeholder="8787"></div>
+          </div>
+          <div class="setting-note"><b>Listen host</b> controls where P3 listens. <b>Printer IP</b> controls which printer NTCLI talks to. They are not the same setting.</div>
+        </div>
+        <div class="card setting-card">
+          <div class="panel-head"><h3>Live log source</h3><span class="tiny">Server-owned path</span></div>
+          <div class="form-grid">
+            <div class="field full"><label>Live log file</label><input id="sLogPath" placeholder="/path/to/printer.log"></div>
+            <div class="field"><label>Log poll</label><input value="1 s" disabled></div>
+            <div class="field"><label>NTCLI poll</label><input value="30 s" disabled></div>
+          </div>
+          <div class="setting-note">The browser never opens arbitrary filesystem paths. The server tails this path incrementally and publishes structured deltas.</div>
+        </div>
+        <div class="card setting-card">
+          <div class="panel-head"><h3>Paper-path filter</h3><span class="tiny">Parser-independent extraction</span></div>
+          <div class="field"><label>Static Paper-Path Filter</label><textarea id="sRegex" readonly spellcheck="false"></textarea></div>
+          <div class="actions-row"><button class="btn" onclick="testRegex()">Test Regex</button><button class="btn" onclick="resetRegex()">Reset Default</button></div>
+          <div id="regexResult" class="setting-note"></div>
+        </div>
+        <div class="card setting-card">
+          <div class="panel-head"><h3>Theme</h3></div>
+          <div class="form-grid">
+            <div class="field"><label>Theme</label><select id="sTheme"><option value="light">Light</option><option value="dark">Dark</option></select></div>
+          </div>
+          <div class="actions-row"><button class="btn red" onclick="saveSettings()">Save settings</button></div>
+          <div id="saveResult" class="setting-note"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div id="tooltip" class="tooltip"></div>
+<div id="drawer" class="drawer">
+  <div class="drawer-back" onclick="closeDrawer()"></div>
+  <aside class="drawer-panel">
+    <div class="drawer-head"><div><h2 id="dTitle">PAGE —</h2><div id="dSub" class="drawer-sub">Traceable page record</div></div><button class="btn icon" onclick="closeDrawer()">Close</button></div>
+    <div id="drawerContent"></div>
+  </aside>
+</div>
+
+<script>
+const DEFAULT_FILTER = '(ppcmd|PPort|SLPQ|pickpage|ImagePositionError|imagepositionerror|qdmg|staging|Page\\s+ID|PageId|PgSup\\s+Page)';
+const STAGES = [
+  ['trayPassThru','Tray Pass Thru'],['printerEntry','Printer Entry'],['s1','S1 Sensor'],
+  ['bumpNip','Bump Nip'],['bumpExit','Bump Exit'],['xfer2','2ndXfer']
+];
+let live = { pages:[], events:[], health:[], ntcli:null, currentPage:null, currentStage:null, latestIpe:null, latestQdmg:null };
+let analysis = null, selectedPageId = null, selectedEvent = null, worker = null, ws = null;
+let trendView = {min:null,max:null,hover:null};
+
+function $(id){return document.getElementById(id)}
+function esc(s){return String(s ?? '').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+function fmt(n,d=2){return n==null?'—':Number(n).toFixed(d)}
+function fmtBytes(n){if(n==null)return'—';const u=['B','KB','MB','GB'];let i=0,x=n;while(x>=1024&&i<3){x/=1024;i++}return x.toFixed(i?2:0)+' '+u[i]}
+function statusBadge(s){const c=(s||'').toLowerCase();return `<span class="badge ${c}">${esc(s||'UNKNOWN')}</span>`}
+function stageName(k){return STAGES.find(x=>x[0]===k)?.[1]||k||'—'}
+function classify(v){if(v==null||Number.isNaN(Number(v)))return'UNKNOWN';return Number(v)<0?'EARLY':Number(v)>0?'LATE':'NOMINAL'}
+function setView(v){
+  document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('active'));
+  $('view-'+v).classList.add('active'); document.querySelector(`[data-view="${v}"]`).classList.add('active');
+  $('pageTitle').textContent = v==='dashboard'?'P3 — PAPER PATH PULSE':v==='analyzer'?'P3 — LOG ANALYZER':'P3 — SETTINGS';
+  $('topSub').textContent = v==='dashboard'?'Real-time page-path observability · evidence first':v==='analyzer'?'Offline corpus analysis · immutable raw source':'Server-owned runtime configuration';
+}
+document.querySelectorAll('.nav button').forEach(b=>b.addEventListener('click',()=>setView(b.dataset.view)));
+function openSettings(){setView('settings');loadSettings()}
+function liveState(){return live?.log?.sourceStatus || 'OFFLINE'}
+async function fetchJson(url,opts){const r=await fetch(url,opts);let j={};try{j=await r.json()}catch{}if(!r.ok)throw new Error(j.error||'Request failed');return j}
+
+async function refreshLive(){
+  try{
+    const [summary, history] = await Promise.all([fetchJson('/api/live/summary'), fetchJson('/api/live/pages?limit=200')]);
+    live={...summary,...history,pages:history.pages||summary.pages||[]}; renderDashboard();
+    $('lastUpdate').textContent='now';
+  }catch(e){ $('liveText').textContent='ERROR'; $('liveDot').className='dot'; }
+}
+function renderDashboard(){
+  const ls=liveState(), nt=live.ntcli||{};
+  $('liveText').textContent=ls; $('liveDot').className='dot '+(ls==='LIVE'?'live':'');
+  $('sidePrinter').textContent=nt.printerIp||'—'; $('sideLog').textContent=ls; $('sideNtcli').textContent=nt.state||'OFFLINE';
+  const pdata=nt.data?.status; const printerState=pdata?.PowerState?.actual||pdata?.Printing?.state||nt.state||'—';
+  $('kPrinter').textContent=printerState; $('kPrinterMeta').textContent=nt.lastSuccess?`last success ${ago(nt.lastSuccess)}`:'NTCLI';
+  $('kPage').textContent=live.currentPage||'—'; $('kStage').textContent=live.currentStage?.label||'—';
+  const i=live.latestIpe; $('kIpe').textContent=i?`${i.ipeMm>=0?'+':''}${fmt(i.ipeMm)} mm`:'—'; $('kIpeMeta').innerHTML=i?statusBadge(i.status):'No IPE';
+  const q=live.latestQdmg;
+  const cp=(live.pages||[]).find(x=>x.pageIdHex===live.currentPage);
+  const gap=cp?.gap?.slice(-1)[0];
+  $('kQdmg').textContent=gap?.gapMm!=null?`${fmt(gap.gapMm)} mm`:(q?.dataWords?.[1]||'—');
+  const h=live.health||[]; $('kHealth').textContent=h.length?((h[0].severity||'INFO')):'OK'; $('kHealthMeta').textContent=h.length?`${h.length} relevant event(s)`:'No relevant event';
+  const dashboardPages=live.pages||[];
+  const dashboardSelected=dashboardPages.find(p=>p.pageIdHex===selectedPageId)||dashboardPages[0]||null;
+  if(dashboardSelected && !selectedPageId) selectedPageId=dashboardSelected.pageIdHex;
+  renderTimeline(dashboardSelected); renderPageSummary(); renderTrend(); renderSqpQ(); renderHealth();
+}
+function ago(iso){try{const s=(Date.now()-new Date(iso).getTime())/1000;if(s<1)return'just now';if(s<60)return`${Math.round(s)}s ago`;return`${Math.round(s/60)}m ago`}catch{return'—'}}
+function chronologicalPages(){
+ const pages=(live.pages||[]).slice();
+ return pages.sort((a,b)=>(a.start??a.lastSeen??Infinity)-(b.start??b.lastSeen??Infinity));
+}
+function pageIndex(){const arr=chronologicalPages();return arr.findIndex(p=>p.pageIdHex===selectedPageId)}
+function previousPage(){const arr=chronologicalPages();const i=pageIndex();if(i>0)selectPage(arr[i-1].pageIdHex,true)}
+function nextPage(){const arr=chronologicalPages();const i=pageIndex();if(i>=0&&i<arr.length-1)selectPage(arr[i+1].pageIdHex,true)}
+function renderPageHistory(){
+ const arr=chronologicalPages();
+ $('pageHistory').innerHTML=arr.slice(-80).map(p=>`<button class="page-chip ${p.pageIdHex===selectedPageId?'active':''}" onclick='selectPage("${p.pageIdHex}",true)'>${esc(p.pageIdHex)}</button>`).join('')||'<span class="tiny">No page history yet.</span>';
+ const holder=$('timelineHistory');
+ holder.innerHTML=arr.slice(-120).reverse().map(p=>{
+   const vals=STAGES.map(([k])=>p.stages?.[k]?.time).filter(v=>v!=null);
+   const start=p.start??(vals.length?Math.min(...vals):null),end=p.end??(vals.length?Math.max(...vals):null);
+   const span=Math.max(.01,((end??start??0)-(start??0))||.01);
+   let lanes=STAGES.map(([k,label])=>{const st=p.stages?.[k];const pos=st?.time==null?null:((st.time-(start??st.time))/span)*100;return `<div class="lane"><div class="lane-name">${esc(label)}</div><div class="lane-track">${pos!=null?`<span class="event-dot ${(st.status||'unknown').toLowerCase()}" style="left:${Math.max(0,Math.min(100,pos))}%"></span>`:''}</div></div>`}).join('');
+   return `<div id="history-${cssSafe(p.pageIdHex)}" class="history-page ${p.pageIdHex===selectedPageId?'active':''}"><div class="history-page-head" onclick='selectPage("${p.pageIdHex}",true)'><b>${esc(p.pageIdHex)}</b><span class="history-meta">${p.start!=null?fmt(p.start,3)+'s':'—'} → ${p.end!=null?fmt(p.end,3)+'s':'OPEN / PARTIAL'} · ${esc(p.status||'OPEN')}</span></div><div class="timeline" style="min-width:560px">${lanes}</div></div>`;
+ }).join('')||'<div class="empty">No previous timelines.</div>';
+}
+function cssSafe(v){return String(v).replace(/[^a-zA-Z0-9_-]/g,'_')}
+function renderTimeline(page){
+ if(!page){$('timeline').innerHTML='<div class="empty">No correlated pages yet. Configure a live log or analyze a raw file.</div>';renderPageHistory();return}
+ const values=STAGES.map(([k])=>page.stages?.[k]?.time).filter(v=>v!=null),start=page.start??(values.length?Math.min(...values):null),end=page.end??(values.length?Math.max(...values):null);
+ if(start==null){$('timeline').innerHTML='<div class="empty">Selected page has no timestamped stage evidence yet.</div>';renderPageHistory();return}
+ const span=Math.max(.01,((end??start)-start)||.01); $('timelinePage').textContent=`${page.pageIdHex} · ${page.status}`;
+ let html='<div class="time-grid"><div class="time-label">STAGE</div><div class="time-head">';
+ for(let t=0;t<=4;t++){const x=t/4;html+=`<span class="axis-tick" style="left:${x*100}%">${fmt(start+span*x,3)}s</span>`} html+='</div></div>';
+ for(const [k,label] of STAGES){
+   const st=page.stages?.[k]; const pos=st?.time==null?null:Math.max(0,Math.min(100,((st.time-start)/span)*100));
+   html+=`<div class="lane"><div class="lane-name">${esc(label)}</div><div class="lane-track"><span class="startline" style="left:0"></span><span class="endline" style="left:100%"></span>${pos!=null?`<span class="event-dot ${(st.status||'UNKNOWN').toLowerCase()}" title="${esc(label)}" onclick='selectPage("${page.pageIdHex}",true)' style="left:${pos}%"></span>`:''}</div></div>`;
+ }
+ $('timeline').innerHTML=html; renderPageHistory();
+}
+function renderPageSummary(){
+ const p=(live.pages||[]).find(x=>x.pageIdHex===selectedPageId)||(live.pages||[])[0];
+ if(!p){$('pageSummary').innerHTML='<div class="empty">No page selected.</div>';return}
+ selectedPageId=p.pageIdHex; $('selectedPageBtn').disabled=false;
+ const filled=STAGES.map(([k,l])=>[k,l,p.stages?.[k]]).filter(x=>x[2]);
+ const early=filled.filter(x=>x[2].status==='EARLY').length, late=filled.filter(x=>x[2].status==='LATE').length;
+ $('pageSummary').innerHTML=`<div class="detail-grid"><div class="detail"><label>Page ID</label><b class="mono">${esc(p.pageIdHex)}</b></div><div class="detail"><label>Pass</label><b>${p.pass??'—'}</b></div><div class="detail"><label>PrinterSideCount</label><b class="mono">${p.printerSideCount??'—'}</b></div><div class="detail"><label>Lifecycle</label><b>${p.start!=null?fmt(p.start,3)+'s':'—'} → ${p.end!=null?fmt(p.end,3)+'s':'OPEN / PARTIAL'}</b></div></div><div class="row" style="justify-content:space-between;margin-bottom:10px"><span>${statusBadge(p.status)}</span><span class="tiny">${filled.length}/6 stages · ${early} early · ${late} late</span></div>`;
+ document.querySelector('#pageSummary').insertAdjacentHTML('beforeend',`<div class="stage-list">${filled.map(([k,l,s])=>`<div class="stage-card"><div class="stage">${esc(l)}</div><div class="reading">${s.ipeMm==null?'EVENT':`${s.ipeMm>=0?'+':''}${fmt(s.ipeMm)} mm`} <span class="muted">· ${fmt(s.time,3)} s</span></div><div>${statusBadge(s.status)}</div></div>`).join('')}</div>`);
+}
+function openSelectedPage(){if(selectedPageId)openPageDrawer(selectedPageId)}
+function selectPage(id,scrollHistory=false){selectedPageId=id;renderPageSummary();renderTrend();renderSqpQ();renderPageHistory();if(scrollHistory){const el=document.getElementById('history-'+cssSafe(id));if(el)el.scrollIntoView({behavior:'smooth',block:'nearest'})}openPageDrawer(id)}
+function openPageDrawer(id){
+ const p=(live.pages||[]).find(x=>x.pageIdHex===id)||(analysis?.pages||[]).find(x=>x.pageIdHex===id); if(!p)return;
+ $('dTitle').textContent=`PAGE ${p.pageIdHex}`; $('dSub').textContent=`Page ${p.pageIdDec} · ${p.status} · raw evidence attached`;
+ const slpq=(p.slpq||[]), qd=(p.qdmg||[]);
+ $('drawerContent').innerHTML=`
+ <div class="detail-grid"><div class="detail"><label>Pass</label><b>${p.pass??'—'}</b></div><div class="detail"><label>PrinterSideCount</label><b class="mono">${p.printerSideCount??'—'}</b></div><div class="detail"><label>Start</label><b>${fmt(p.start,3)} s</b></div><div class="detail"><label>End</label><b>${p.end!=null?fmt(p.end,3)+' s':'OPEN / PARTIAL'}</b></div></div>
+ <div class="panel-head"><h3>Paper path</h3></div>
+ <div class="stage-list">${STAGES.map(([k,l])=>{const s=p.stages?.[k];return `<div class="stage-card"><div class="stage">${esc(l)}</div><div class="reading">${s?`${s.ipeMm==null?'EVENT':(s.ipeMm>=0?'+':'')+fmt(s.ipeMm)+' mm'} · ${fmt(s.time,3)}s`:'—'}</div><div>${statusBadge(s?.status||'UNKNOWN')}</div></div>`}).join('')}</div>
+ <div class="panel-head" style="margin-top:16px"><h3>SLPQ</h3></div>
+ ${slpq.length?slpq.slice(-5).reverse().map(r=>`<div class="detail-grid"><div class="detail"><label>Page ID</label><b class="mono">${esc(r.pgid)}</b></div><div class="detail"><label>Sub</label><b class="mono">${esc(r.sub)}</b></div><div class="detail"><label>Offset</label><b class="mono">${esc(r.offset)}</b></div><div class="detail"><label>Accum / Fin</label><b class="mono">${esc(r.accum)} / ${esc(r.fin)}</b></div><div class="detail"><label>HP / SP</label><b class="mono">${esc(r.hp)} / ${esc(r.sp)}</b></div><div class="detail"><label>Source line</label><b>${r.sourceLine??'—'}</b></div></div><div class="raw-detail">${esc(r.raw)}</div>`).join(''):'<div class="empty">No SLPQ record linked to this page.</div>'}
+ <div class="panel-head" style="margin-top:16px"><h3>QDMG</h3></div>
+ ${qd.length?qd.slice(-8).reverse().map(r=>`<div class="detail-grid"><div class="detail"><label>Role</label><b>${esc(r.role)}</b></div><div class="detail"><label>Control</label><b class="mono">${esc(r.control)}</b></div><div class="detail"><label>Address</label><b class="mono">${esc(r.address)}</b></div><div class="detail"><label>Timestamp</label><b>${fmt(r.timestamp,3)}s</b></div></div><div class="raw-detail">${esc(r.raw)}</div>`).join(''):'<div class="empty">No QDMG transaction linked to this page.</div>'}
+ <div class="panel-head" style="margin-top:16px"><h3>Traceability</h3></div>
+ <div class="raw-detail">${esc((p.events||[]).map(id=>(live.events||analysis?.events||[]).find(e=>e.id===id)?.raw||'').filter(Boolean).slice(-30).join('\\n'))}</div>`;
+ $('drawer').classList.add('show')
+}
+function closeDrawer(){$('drawer').classList.remove('show')}
+
+function trendModel(){
+ const pages=chronologicalPages(),events=live.events||[],mode=$('trendMode').value,pts=[],segments=[],labels=[];
+ if(mode==='selected'&&selectedPageId){
+   const p=pages.find(x=>x.pageIdHex===selectedPageId); if(p){for(const [k,l] of STAGES){const s=p.stages?.[k];if(s)pts.push({x:s.time,y:s.ipeMm??0,page:p.pageIdHex,stage:l,status:s.status,time:s.time,raw:s.raw,measured:s.ipeMm!=null})}}
+ } else if(mode==='page'){
+   pages.slice(-200).forEach((p,idx)=>{
+     const x=idx; labels.push({x,page:p.pageIdHex}); const seq=[];
+     for(const [k,l] of STAGES){
+       let s=p.stages?.[k];
+       if(k==='printerEntry' && !s && p.start!=null) s={time:p.start,ipeMm:null,status:'EVENT',raw:'Printer Entry event inferred from page start evidence.'};
+       if(s?.time!=null){const pt={x,y:s.ipeMm??0,page:p.pageIdHex,stage:l,status:s.status||'EVENT',time:s.time,raw:s.raw,measured:s.ipeMm!=null,entry:k==='printerEntry',stageKey:k};pts.push(pt);seq.push(pt)}
+     }
+     for(let i=1;i<seq.length;i++)segments.push({a:seq[i-1],b:seq[i],bridge:false});
+   });
+   // Explicit paper-path page transition: 2ndXfer of page N -> Printer Entry of page N+1.
+   for(let i=0;i<pages.slice(-200).length-1;i++){
+     const a=pages.slice(-200)[i],b=pages.slice(-200)[i+1], xfer=a.stages?.xfer2, entry=b.stages?.printerEntry;
+     if(xfer?.time!=null && b.start!=null){
+       const entryPt=pts.find(pt=>pt.page===b.pageIdHex&&pt.stageKey==='printerEntry');
+       const xferPt=pts.find(pt=>pt.page===a.pageIdHex&&pt.stageKey==='xfer2');
+       if(xferPt&&entryPt)segments.push({a:xferPt,b:entryPt,bridge:true});
+     }
+   }
+ } else if(mode==='stage'){
+   for(const e of events)if(e.type==='pageStage'&&e.ipeMm!=null)pts.push({x:e.time??e.engineTime,y:e.ipeMm,page:e.pageIdHex,stage:stageName(e.stage),status:e.status,time:e.engineTime,raw:e.raw,measured:true});
+ } else {
+   for(const e of events)if(e.type==='pageStage'&&e.ipeMm!=null)pts.push({x:e.engineTime??0,y:e.ipeMm,page:e.pageIdHex,stage:stageName(e.stage),status:e.status,time:e.engineTime,raw:e.raw,measured:true});
+ }
+ return {pts,segments,labels,mode};
+}
+function renderTrend(){
+ const c=$('ipeCanvas'), rect=c.getBoundingClientRect(), dpr=devicePixelRatio||1;c.width=Math.max(300,rect.width*dpr);c.height=Math.max(220,rect.height*dpr);
+ const ctx=c.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);const W=rect.width,H=rect.height;ctx.clearRect(0,0,W,H);
+ const model=trendModel(),pts=model.pts;if(!pts.length){ctx.fillStyle=getComputedStyle(document.body).getPropertyValue('--muted');ctx.font='12px system-ui';ctx.fillText('No IPE/page-path points yet.',20,34);return}
+ const xs=pts.map(p=>p.x),ys=pts.filter(p=>p.measured).map(p=>p.y);let xmin=Math.min(...xs),xmax=Math.max(...xs);if(xmin===xmax){xmin-=1;xmax+=1}let ymin=ys.length?Math.min(...ys):-1,ymax=ys.length?Math.max(...ys):1;const pad=Math.max(1,(ymax-ymin)*.12);ymin-=pad;ymax+=pad;
+ const left=46,right=18,top=16,bottom=34,iw=W-left-right,ih=H-top-bottom;
+ function px(x){return left+((x-xmin)/(xmax-xmin))*iw} function py(y){return top+((ymax-y)/(ymax-ymin))*ih}
+ const styles=getComputedStyle(document.body),textColor=styles.getPropertyValue('--muted'),border=styles.getPropertyValue('--border'),red=styles.getPropertyValue('--red');
+ ctx.strokeStyle=border;ctx.lineWidth=1;ctx.beginPath();for(let i=0;i<5;i++){let y=top+ih*i/4;ctx.moveTo(left,y);ctx.lineTo(W-right,y)}ctx.stroke();
+ const zeroY=py(0);ctx.strokeStyle=styles.getPropertyValue('--text');ctx.setLineDash([4,4]);ctx.globalAlpha=.45;ctx.beginPath();ctx.moveTo(left,zeroY);ctx.lineTo(W-right,zeroY);ctx.stroke();ctx.setLineDash([]);ctx.globalAlpha=1;
+ ctx.fillStyle=textColor;ctx.font='9px system-ui';for(let i=0;i<5;i++){const y=top+ih*i/4,val=ymax-(ymax-ymin)*i/4;ctx.fillText(val.toFixed(1),5,y+3)}
+ const drawSegment=(a,b,bridge)=>{ctx.beginPath();ctx.moveTo(px(a.x),py(a.y));ctx.lineTo(px(b.x),py(b.y));ctx.setLineDash(bridge?[5,4]:[]);ctx.strokeStyle=bridge?textColor:red;ctx.lineWidth=bridge?1.1:1.7;ctx.globalAlpha=bridge?.65:1;ctx.stroke();ctx.setLineDash([]);ctx.globalAlpha=1};
+ if(model.mode==='page') model.segments.forEach(s=>drawSegment(s.a,s.b,s.bridge));
+ else {ctx.strokeStyle=red;ctx.lineWidth=1.7;ctx.beginPath();pts.forEach((p,i)=>{const X=px(p.x),Y=py(p.y);if(i)ctx.lineTo(X,Y);else ctx.moveTo(X,Y)});ctx.stroke()}
+ pts.forEach(p=>{ctx.fillStyle=!p.measured?textColor:p.status==='EARLY'?'#8f5a9f':p.status==='LATE'?red:styles.getPropertyValue('--green');ctx.beginPath();ctx.arc(px(p.x),py(p.y),p.entry?4:3.6,0,Math.PI*2);ctx.fill();if(p.entry){ctx.strokeStyle=textColor;ctx.lineWidth=1;ctx.beginPath();ctx.arc(px(p.x),py(p.y),6,0,Math.PI*2);ctx.stroke()}});
+ if(model.mode==='page'){
+   ctx.fillStyle=textColor;ctx.font='9px system-ui';const step=Math.max(1,Math.ceil(model.labels.length/10));model.labels.forEach((l,i)=>{if(i%step===0)ctx.fillText(l.page,Math.max(left,px(l.x)-12),H-8)});
+ }
+ c.__plot={pts,px,py,rect,xmin,xmax,ymin,ymax};
+}
+$('ipeCanvas').addEventListener('mousemove',e=>{const c=$('ipeCanvas');const p=c.__plot;if(!p)return;let best=null,bd=1e9;const x=e.offsetX,y=e.offsetY;for(const pt of p.pts){const dx=p.px(pt.x)-x,dy=p.py(pt.y)-y,d=dx*dx+dy*dy;if(d<bd){bd=d;best=pt}}if(best&&bd<180){const t=$('tooltip');t.innerHTML=best.measured?`<b>${esc(best.page)}</b> · ${esc(best.stage)}<br>${best.y>=0?'+':''}${fmt(best.y)} mm · ${best.status}<br>${fmt(best.time,3)} s`:`<b>${esc(best.page)}</b> · ${esc(best.stage)}<br>EVENT · no IPE measurement<br>${fmt(best.time,3)} s`;t.style.display='block';t.style.left=(e.clientX+14)+'px';t.style.top=(e.clientY+14)+'px'}else $('tooltip').style.display='none'});
+$('ipeCanvas').addEventListener('mouseleave',()=> $('tooltip').style.display='none');
+function resetTrend(){trendView={min:null,max:null,hover:null};renderTrend()}
+function centerSelected(){if(selectedPageId){$('trendMode').value='selected';renderTrend()}}
+
+function renderSqpQ(){
+ const p=(live.pages||[]).find(x=>x.pageIdHex===selectedPageId); if(!p){$('slpqPanel').innerHTML='<div class="empty">Select a page with queue activity.</div>';return}
+ $('selectedPgid').textContent=p.pageIdHex; const s=p.slpq||[],q=p.qdmg||[];
+ $('slpqPanel').innerHTML=`<div class="detail-grid"><div class="detail"><label>Page ID</label><b class="mono">${esc(p.pageIdHex)}</b></div><div class="detail"><label>SLPQ records</label><b>${s.length}</b></div><div class="detail"><label>QDMG records</label><b>${q.length}</b></div><div class="detail"><label>Gap evidence</label><b>${p.gap?.length||0}</b></div></div>
+ ${s.slice(-3).reverse().map(r=>`<div class="raw-detail" style="margin-bottom:7px">${esc(r.raw)}</div>`).join('')}
+ ${q.slice(-4).reverse().map(r=>`<div class="raw-detail" style="margin-bottom:7px">${esc(r.role+' · '+r.control+' · '+r.dataWords.join(' '))}</div>`).join('')}`;
+}
+function renderHealth(){const h=live.health||[];$('healthCount').textContent=`${h.length} event(s)`;$('healthList').innerHTML=h.length?h.slice(0,20).map(e=>`<div class="health-item ${String(e.severity||'').toLowerCase()}"><div class="time">${fmt(e.engineTime,3)}s · line ${e.sourceLine??e.lineNumber??'—'} · ${esc(e.severity||'INFO')}</div><div class="raw">${esc(e.raw)}</div></div>`).join(''):'<div class="empty">No relevant health events.</div>'}
+
+function renderAnalyzer(){
+ if(!analysis)return;
+ const pages=analysis.pages||[]; $('aFile').textContent=analysis.filename||'—';$('aSize').textContent=fmtBytes(analysis.sizeBytes);$('aLines').textContent=(analysis.totalLines||analysis.stats?.lines||0).toLocaleString();$('aMatched').textContent=(analysis.stats?.matched||0).toLocaleString();$('aPages').textContent=pages.length.toLocaleString();
+ $('aParse').textContent=analysis.parseMs?analysis.parseMs+' ms':'worker';
+ const pf=$('aPageFilter'); const existing=pf.value;pf.innerHTML='<option value="">All pages</option>'+pages.slice().sort((a,b)=>a.pageIdDec-b.pageIdDec).map(p=>`<option value="${esc(p.pageIdHex)}">${esc(p.pageIdHex)}</option>`).join('');pf.value=existing||'';
+ $('pageListCount').textContent=`${pages.length.toLocaleString()} pages`; renderAnalyzerList();
+ const first=pages.find(p=>p.pageIdHex===selectedPageId)||pages[0];if(first){selectedPageId=first.pageIdHex;renderAnalyzerTimeline(first)}
+}
+function renderAnalyzerList(){
+ if(!analysis)return; const search=($('aSearch').value||'').toLowerCase(),pf=$('aPageFilter').value, sf=$('aStageFilter').value, stf=$('aStatusFilter').value;
+ const pages=(analysis.pages||[]).filter(p=>!pf||p.pageIdHex===pf).filter(p=>{
+   if(!search)return true;return JSON.stringify(p).toLowerCase().includes(search)
+ });
+ $('pageList').innerHTML=pages.length?pages.slice(0,2000).map(p=>{const dots=STAGES.map(([k])=>{const s=p.stages?.[k];return `<span class="stage-dot ${String(s?.status||'').toLowerCase()}"></span>`}).join('');return `<div class="page-row ${p.pageIdHex===selectedPageId?'active':''}" onclick='selectAnalysisPage("${p.pageIdHex}")'><div class="page-id">${p.pageIdHex}</div><div>${p.status==='COMPLETE'?statusBadge('COMPLETE'):statusBadge('OPEN')}</div><div class="stage-dots">${dots}</div><div class="right">${p.end!=null&&p.start!=null?fmt((p.end-p.start)*1000,1)+' ms':'—'}</div></div>`}).join(''):'<div class="empty">No pages match the filters.</div>';
+ const events=(analysis.events||[]).filter(e=>!search||String(e.raw||'').toLowerCase().includes(search)||String(e.pageIdHex||'').toLowerCase().includes(search)).filter(e=>!pf||e.pageIdHex===pf).filter(e=>!sf||e.stage===sf).filter(e=>!stf||e.status===stf);
+ $('signalListCount').textContent=`${events.length.toLocaleString()} signals`; $('signalList').innerHTML=events.slice(-1200).reverse().map(e=>`<div class="signal" onclick='showRaw(${JSON.stringify(e.id)})'><div class="meta">${esc(e.pageIdHex||'UNASSIGNED')} · ${esc(e.type)} · ${e.sourceLine??e.lineNumber??'—'} · ${fmt(e.engineTime,3)}s</div><div>${esc((e.raw||'').slice(0,330))}</div></div>`).join('')||'<div class="empty">No filtered signals.</div>';
+}
+function selectAnalysisPage(id){selectedPageId=id;renderAnalyzerList();const p=analysis.pages.find(x=>x.pageIdHex===id);if(p){renderAnalyzerTimeline(p);showRawForPage(p);openAnalysisDrawer(p)}}
+function openAnalysisDrawer(p){
+ const old=live;live={...live,pages:[p],events:analysis.events||[],health:analysis.health||[]};openPageDrawer(p.pageIdHex);live=old;
+}
+function renderAnalyzerTimeline(p){
+ const holder=$('analyzerTimeline'); if(!p){holder.innerHTML='';return}
+ const values=STAGES.map(([k])=>p.stages?.[k]?.time).filter(v=>v!=null),start=p.start??Math.min(...values),end=p.end??Math.max(...values),span=Math.max(.01,(end-start)||.01);
+ let html='<div class="timeline" style="min-width:500px"><div class="time-grid"><div class="time-label">STAGE</div><div class="time-head">';
+ for(let t=0;t<=4;t++)html+=`<span class="axis-tick" style="left:${t*25}%">${fmt(start+span*t/4,3)}s</span>`;html+='</div></div>';
+ for(const [k,l] of STAGES){const s=p.stages?.[k],pos=s?.time==null?null:((s.time-start)/span)*100;html+=`<div class="lane"><div class="lane-name">${esc(l)}</div><div class="lane-track">${pos!=null?`<span class="event-dot ${(s.status||'unknown').toLowerCase()}" style="left:${Math.max(0,Math.min(100,pos))}%"></span>`:''}</div></div>`}
+ html+='</div>';holder.innerHTML=html;
+}
+function showRaw(id){const e=(analysis?.events||[]).find(x=>x.id===id);if(e){selectedEvent=e;$('rawViewer').textContent=e.raw}}
+function showRawForPage(p){const e=(analysis?.events||[]).filter(x=>p.events?.includes(x.id)).slice(-1)[0];if(e)showRaw(e.id)}
+
+async function loadSettings(){
+ try{const j=await fetchJson('/api/config');const c=j.config;$('sPrinterIp').value=c.printerIp||'';$('sSshUser').value=c.sshUser||'';$('sListenHost').value=c.listenHost||'127.0.0.1';$('sPort').value=c.port||8787;$('sLogPath').value=c.liveLogPath||'';$('sRegex').value=DEFAULT_FILTER;$('sTheme').value=c.theme||'light';applyTheme(c.theme||'light')}catch(e){$('saveResult').textContent=e.message}
+}
+function applyTheme(t){document.documentElement.dataset.theme=t||'light'}
+async function saveSettings(){
+ const body={printerIp:$('sPrinterIp').value.trim(),sshUser:$('sSshUser').value.trim(),listenHost:$('sListenHost').value.trim(),port:Number($('sPort').value),liveLogPath:$('sLogPath').value.trim(),theme:$('sTheme').value};
+ try{const j=await fetchJson('/api/config',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});$('saveResult').textContent='Saved. Restart the server if the bind address/port change is not adopted by your process manager.';applyTheme(body.theme);setTimeout(refreshLive,50)}catch(e){$('saveResult').textContent='Error: '+e.message}
+}
+function resetRegex(){$('sRegex').value=DEFAULT_FILTER;$('regexResult').textContent='Static filter restored. It is intentionally not editable.'}
+function testRegex(){try{new RegExp(DEFAULT_FILTER,'i');$('regexResult').textContent='Static paper-path extraction filter is valid and locked.'}catch(e){$('regexResult').textContent='Filter error: '+e.message}}
+function exportAnalysis(){if(!analysis)return;const blob=new Blob([JSON.stringify(analysis,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=(analysis.filename||'p3-analysis').replace(/\.[^.]+$/,'')+'.p3.json';a.click();URL.revokeObjectURL(a.href)}
+
+function analyzeFile(file){
+ if(!file)return; $('parseStatus').textContent=`Reading ${file.name} in background…`; const started=performance.now();
+ if(worker)worker.terminate();
+ try{worker=new Worker('/p3-worker.js')}catch(e){$('parseStatus').textContent='Analyzer worker unavailable: '+e.message;return}
+ worker.onerror=e=>{$('parseStatus').textContent='Analyzer worker error: '+(e.message||'Failed to start worker')};
+ worker.onmessage=e=>{
+  const m=e.data;
+  if(m.type==='progress'){$('parseStatus').textContent=`Parsing ${file.name} · ${Math.round((m.readBytes/m.totalBytes)*100)}% · ${m.lines.toLocaleString()} lines`}
+  if(m.type==='error'){$('parseStatus').textContent='Parse error: '+m.error}
+  if(m.type==='result'){m.result.parseMs=Math.round(performance.now()-started);analysis=m.result;$('parseStatus').textContent=`Complete · ${m.result.stats.parsed.toLocaleString()} structured events · ${m.result.orphans.length.toLocaleString()} orphan signals`;selectedPageId=m.result.pages?.[0]?.pageIdHex||null;renderAnalyzer();if(selectedPageId)renderAnalyzerTimeline(m.result.pages[0])}
+ };
+ worker.postMessage({type:'analyze',file,filter:$('sRegex').value||DEFAULT_FILTER});
+}
+$('filePicker').addEventListener('change',e=>analyzeFile(e.target.files[0]));
+const dz=$('dropZone');['dragenter','dragover'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.add('drag')}));['dragleave','drop'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.remove('drag')}));dz.addEventListener('drop',e=>{const file=e.dataTransfer.files?.[0];if(file)analyzeFile(file)});
+
+function connectWs(){
+ try{const proto=location.protocol==='https:'?'wss':'ws';ws=new WebSocket(`${proto}://${location.host}/ws/live`);
+ ws.onmessage=e=>{try{const m=JSON.parse(e.data);if(m.type==='snapshot'){if(m.live){live={...live,...m.live,ntcli:m.ntcli};renderDashboard()}}else if(m.type==='delta'){refreshLive() }else if(m.type==='ntcli'){refreshLive()}}catch{}};
+ ws.onclose=()=>setTimeout(connectWs,2500);
+ }catch{setTimeout(connectWs,2500)}
+}
+window.addEventListener('resize',()=>renderTrend());
+loadSettings();refreshLive();connectWs();
+setInterval(refreshLive,1000);
+</script>
+</body>
+</html>
